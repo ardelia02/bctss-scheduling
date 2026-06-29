@@ -1,0 +1,915 @@
+
+   11. TRAINERS RENDER
+   ================================================================ */
+const renderTrainers = () => {
+  const grid = document.getElementById('trainersGrid');
+  const avatarColors = ['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b'];
+
+  grid.innerHTML = AppState.trainers.map((t, i) => {
+    const authorisedLessons = Object.entries(AppState.authMatrix)
+      .filter(([, tids]) => tids.includes(t.id))
+      .map(([lid]) => getLesson(lid).name)
+      .filter(Boolean);
+
+    const todayEvs = AppState.events.filter(ev =>
+      ev.date === todayStr() && (ev.trainerIds || []).includes(t.id) && ev.status !== 'cancelled'
+    );
+
+    let monthMins = 0;
+    AppState.events.forEach(e => {
+      if ((e.trainerIds || []).includes(t.id) && e.status !== 'cancelled' && isCurrentMonth(e.date || '')) {
+        monthMins += timeToMin(e.endTime) - timeToMin(e.startTime);
+      }
+    });
+    const monthHrs = Math.round((monthMins / 60) * 10) / 10;
+
+    // Upcoming unavailability for this trainer
+    const upcomingUnavail = (AppState.unavailabilities || [])
+      .filter(u => u.trainerId === t.id && u.date >= todayStr())
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+      .slice(0, 2);
+
+    const unavailHtml = upcomingUnavail.length > 0 ? `
+      <div style="margin-top:8px; font-size:11px; color:var(--gray-500); border-top:1px solid var(--border); padding-top:8px;">
+        <div style="font-weight:600; margin-bottom:4px; color:var(--gray-600);">Upcoming Leave/Unavailability:</div>
+        ${upcomingUnavail.map(u => `<div style="margin-bottom:2px;">🚫 ${fmtDate(u.date)} ${fmtTime(u.startTime)}–${fmtTime(u.endTime)} — ${escapeHTML(u.reason)}</div>`).join('')}
+      </div>` : '';
+
+    const todayHtml = todayEvs.length > 0 ? `📅 ${todayEvs.length} lesson(s) today` : '✅ Available today';
+    
+    // Convert unavail array to raw data for onclick binding
+    const uData = encodeURIComponent(JSON.stringify(upcomingUnavail));
+
+    return `
+      <div tabindex=\"0\" role=\"button\" class="trainer-card" style="cursor:pointer; transition:all 0.2s;" onclick="editTrainer('${t.id}', '${monthHrs}', '${todayHtml}', '${uData}')">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="trainer-avatar" style="background:${avatarColors[i % avatarColors.length]}">${escapeHTML(t.initials)}</div>
+            <div>
+              <div class="trainer-name" style="margin-bottom:2px;">${escapeHTML(t.name)}</div>
+              <div style="font-size:12px; color:var(--gray-500); margin-bottom:4px;">${t.type || 'Full Time'}</div>
+              <div style="font-size:12px; color:var(--brand-600); font-weight:500;">⏳ ${monthHrs} hrs this month</div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+            <button class="btn btn-ghost btn-sm import-trainer-btn" data-tid="${t.id}" style="padding:4px 8px; font-size:11px;" onclick="event.stopPropagation();" title="Import Outlook Calendar">Import ICS</button>
+            <button class="btn btn-ghost btn-sm leave-requests-btn" style="padding:4px 8px; font-size:11px; color:var(--gray-600);" onclick="event.stopPropagation(); showTrainerLeaveRequests('${t.id}', '${uData}')">Leaves (${upcomingUnavail.length})</button>
+            <button class="btn btn-ghost btn-sm analytics-btn" style="padding:4px 8px; font-size:11px; color:var(--brand-600);" onclick="event.stopPropagation(); openTrainerAnalytics('${t.id}')">Analytics</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+};
+
+window.openTrainerAnalytics = (trainerId) => {
+  const t = getTrainer(trainerId);
+  if (!t) return;
+  document.getElementById('trainerAnalyticsModalTitle').textContent = `Analytics: ${escapeHTML(t.name)}`;
+  
+  const trainerEvents = AppState.events.filter(e => 
+    (e.trainerIds || []).includes(trainerId) || (e.understudyIds || []).includes(trainerId)
+  );
+
+  const monthSelect = document.getElementById('adminTrainerStatsMonthSelect');
+  if (monthSelect) {
+    monthSelect.dataset.trainerId = trainerId;
+    const months = new Set();
+    trainerEvents.forEach(e => {
+      if (e.status !== 'cancelled' && e.date) {
+        months.add(e.date.substring(0, 7));
+      }
+    });
+    const sortedMonths = Array.from(months).sort().reverse();
+    const currentSelection = todayStr().substring(0, 7);
+    
+    monthSelect.innerHTML = `<option value="all">All Time</option>` + sortedMonths.map(m => {
+      const d = new Date(m + '-01');
+      const label = d.toLocaleDateString('en-SG', { month: 'short', year: 'numeric' });
+      return `<option value="${m}">${label}</option>`;
+    }).join('');
+    
+    if (monthSelect.querySelector(`option[value="${currentSelection}"]`)) {
+      monthSelect.value = currentSelection;
+    } else if (sortedMonths.length > 0) {
+      monthSelect.value = sortedMonths[0];
+    } else {
+      monthSelect.value = 'all';
+    }
+  }
+  
+  window.renderAdminTrainerStats(trainerId, monthSelect ? monthSelect.value : 'all');
+  openModal('trainerAnalyticsModal');
+};
+
+window.renderAdminTrainerStats = (trainerId, monthStr) => {
+  const trainerEvents = AppState.events.filter(e => 
+    (e.trainerIds || []).includes(trainerId) || (e.understudyIds || []).includes(trainerId)
+  );
+  
+  let totalMins = 0;
+  const moduleCounts = {};
+  
+  trainerEvents.forEach(e => {
+    if (e.status !== 'cancelled' && e.date) {
+      const eMonth = e.date.substring(0, 7);
+      if (monthStr === 'all' || eMonth === monthStr) {
+        const mins = timeToMin(e.endTime) - timeToMin(e.startTime);
+        totalMins += mins;
+        if (!moduleCounts[e.lessonId]) moduleCounts[e.lessonId] = { count: 0, mins: 0 };
+        moduleCounts[e.lessonId].count += 1;
+        moduleCounts[e.lessonId].mins += mins;
+      }
+    }
+  });
+  
+  const hrs = Math.round((totalMins / 60) * 10) / 10;
+  
+  let breakdownHtml = '';
+  const sortedModules = Object.keys(moduleCounts).sort((a,b) => moduleCounts[b].mins - moduleCounts[a].mins);
+  if (sortedModules.length > 0) {
+    breakdownHtml = sortedModules.map(lessonId => {
+      const lesson = getLesson(lessonId);
+      const m = moduleCounts[lessonId];
+      const mHrs = Math.round((m.mins / 60) * 10) / 10;
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:#fff; border:1px solid var(--border); border-radius:8px;">
+          <div>
+            <div style="font-size:13px; font-weight:600; color:var(--gray-900);">${lesson ? lesson.name : 'Unknown Module'}</div>
+            <div style="font-size:12px; color:var(--gray-500);">${m.count} lesson${m.count !== 1 ? 's' : ''}</div>
+          </div>
+          <div style="font-size:14px; font-weight:700; color:var(--brand-600);">${mHrs} hrs</div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    breakdownHtml = `<div class="empty-state" style="padding:16px;">No modules taught in this period.</div>`;
+  }
+  
+  document.getElementById('adminTrainerStatsContent').innerHTML = `
+    <div style="display:flex; gap:20px; margin-bottom:16px;">
+      <div style="text-align:center; padding:16px; background:var(--brand-50); border-radius:12px; flex:1;">
+        <div style="font-size:32px; font-weight:700; color:var(--brand-600);">${hrs}</div>
+        <div style="font-size:13px; color:var(--gray-500); font-weight:500;">Total Teaching Hours</div>
+      </div>
+    </div>
+    <div style="font-size:13px; font-weight:600; color:var(--gray-700); margin-bottom:8px;">Module Breakdown</div>
+    <div style="display:flex; flex-direction:column; gap:8px; max-height: 250px; overflow-y:auto; padding-right:4px;">
+      ${breakdownHtml}
+    </div>
+  `;
+};
+
+/** Build trainer courses custom dropdown list */
+const buildTrainerCoursesDropdown = (preSelected = []) => {
+  const container = document.getElementById('trainerCoursesSelectDropdown');
+  const label = document.getElementById('trainerCoursesSelectLabel');
+  
+  const optionsHtml = AppState.lessons.map(l => {
+    const isChecked = preSelected.includes(l.id);
+    return `
+      <label class="custom-option">
+        <input type="checkbox" name="trainerCourseIds" value="${l.id}" ${isChecked ? 'checked' : ''} onchange="updateTrainerCoursesLabel()">
+        <span class="custom-option-name">${l.name}</span>
+      </label>`;
+  }).join('');
+  
+  container.innerHTML = optionsHtml;
+  updateTrainerCoursesLabel();
+};
+
+const updateTrainerCoursesLabel = () => {
+  const checked = [...document.querySelectorAll('input[name="trainerCourseIds"]:checked')];
+  const label = document.getElementById('trainerCoursesSelectLabel');
+  if (checked.length === 0) {
+    label.textContent = 'Select Courses...';
+  } else if (checked.length === 1) {
+    label.textContent = checked[0].nextElementSibling.textContent;
+  } else {
+    label.textContent = `${checked.length} Courses Selected`;
+  }
+};
+
+/** Create or Edit an Admin */
+const saveAdmin = (e) => {
+  e.preventDefault();
+  const id       = document.getElementById('adminId').value;
+  const name     = document.getElementById('adminName').value.trim();
+  const password = document.getElementById('adminPassword').value.trim();
+
+  if (!name || (!id && !password)) {
+    showToast('Name and password are required for new admins.', 'warning');
+    return;
+  }
+
+  const p = password ? hashPassword(password) : Promise.resolve(null);
+  
+  p.then(hashedPwd => {
+    if (id) {
+      const a = AppState.admins.find(adm => adm.id === id);
+      if (a) {
+        a.name = name;
+        if (hashedPwd) a.password = hashedPwd;
+        showToast(`Admin "${name}" updated!`, 'success');
+      }
+    } else {
+      const newId = `ad${uid()}`;
+      AppState.admins.push({ id: newId, name, password: hashedPwd });
+      showToast(`Admin "${name}" added!`, 'success');
+    }
+
+    closeModal('adminModal');
+    renderAdmins();
+    
+    // Also update splash login dropdown just in case
+    const adminSel = document.getElementById('splashAdminSelect');
+    if (adminSel) {
+      adminSel.innerHTML = '<option value="">— Select your profile —</option>' + 
+        AppState.admins.map(a => `<option value="${a.id}">${escapeHTML(a.name)}</option>`).join('');
+    }
+  });
+};
+
+/** Create or Edit a trainer */
+const saveTrainer = (e) => {
+  e.preventDefault();
+  const id       = document.getElementById('trainerId').value;
+  const name     = document.getElementById('trainerName').value.trim();
+  const initials = document.getElementById('trainerInitials').value.trim().toUpperCase();
+  const type     = document.getElementById('trainerType').value;
+  const courseIds= [...document.querySelectorAll('input[name="trainerCourseIds"]:checked')].map(el => el.value);
+
+  if (!name || !initials) {
+    showToast('Name and initials are required.', 'warning');
+    return;
+  }
+
+  let tId = id;
+  if (id) {
+    const t = getTrainer(id);
+    if (t) {
+      t.name = name;
+      t.initials = initials;
+      t.type = type;
+      showToast(`Trainer "${name}" updated!`, 'success');
+    }
+  } else {
+    tId = `tr${uid()}`;
+    const trainer = { id: tId, name, initials, type };
+    AppState.trainers.push(trainer);
+    showToast(`Trainer "${name}" added!`, 'success');
+  }
+
+  // Update auth matrix for this trainer
+  AppState.lessons.forEach(l => {
+    if (!AppState.authMatrix[l.id]) AppState.authMatrix[l.id] = [];
+    const authArray = AppState.authMatrix[l.id];
+    const isChecked = courseIds.includes(l.id);
+    
+    if (isChecked && !authArray.includes(tId)) {
+      authArray.push(tId);
+    } else if (!isChecked && authArray.includes(tId)) {
+      AppState.authMatrix[l.id] = authArray.filter(t => t !== tId);
+    }
+  });
+
+  closeModal('trainerModal');
+  renderTrainers();
+  renderMatrix(); // re-render authorization matrix to include new trainer
+};
+
+
+
+   12. CLASSROOMS RENDER
+   ================================================================ */
+const renderClassrooms = () => {
+  const grid = document.getElementById('classroomsGrid');
+  const searchDate = (() => { const el = document.getElementById('classroomSearchDate'); return el ? el.value : ''; })()
+  
+  if (searchDate) {
+    document.getElementById('classroomSearchClearBtn').style.display = 'inline-block';
+  } else {
+    const clearBtn = document.getElementById('classroomSearchClearBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+  }
+  
+  grid.innerHTML = AppState.classrooms.map(c => {
+    let statusHtml = '';
+    
+    if (searchDate) {
+      // Find events in this classroom on this date
+      const dayEvs = AppState.events.filter(ev => 
+        (ev.classroomIds || []).includes(c.id) && 
+        ev.date === searchDate &&
+        ev.status !== 'cancelled'
+      ).sort((a, b) => a.startTime.localeCompare(b.startTime));
+      
+      if (dayEvs.length === 0) {
+        statusHtml = `<div style="margin-top:12px; font-size:12px; color:var(--success); font-weight:500;">✅ Available all day</div>`;
+      } else {
+        const times = dayEvs.map(ev => `${fmtTime(ev.startTime)}–${fmtTime(ev.endTime)}`).join(', ');
+        statusHtml = `<div style="margin-top:12px; font-size:12px; color:var(--danger); font-weight:500;">❌ Occupied: ${times}</div>`;
+      }
+    } else {
+      // Default: Count upcoming events
+      const upcomingEvs = AppState.events.filter(ev => 
+        (ev.classroomIds || []).includes(c.id) && safeDate(ev.date) >= new Date(todayStr()) && ev.status !== 'cancelled'
+      ).length;
+      statusHtml = `<div style="margin-top:12px; font-size:12px; color:var(--brand-600); font-weight:500;">📅 ${upcomingEvs} upcoming lesson(s) — Click to view schedule</div>`;
+    }
+
+    return `
+      <div class="classroom-card clickable" tabindex="0" role="button" data-crid="${c.id}" style="cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;">
+        <div class="classroom-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>
+        <div class="classroom-info" style="width: 100%; min-width: 0;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div class="classroom-name">${escapeHTML(c.name)}</div>
+              <div class="classroom-meta">${c.type || 'Classroom'} • ${c.pax || c.capacity || 0} pax</div>
+            </div>
+            <button class="btn btn-ghost btn-sm edit-classroom-btn" data-crid="${c.id}" style="padding:2px 6px; font-size:10px;">Edit</button>
+          </div>
+          ${statusHtml}
+        </div>
+      </div>`;
+  }).join('');
+};
+
+/** Generic Week Calendar Grid Renderer */
+const renderReusableWeekGrid = (containerId, anchor, events, onEmptyClick = null, numDays = 7) => {
+  const HOUR_H    = 64;
+  const START_H   = 7;
+  const END_H     = 21;
+  const N_HOURS   = END_H - START_H;
+  const TOTAL_H   = N_HOURS * HOUR_H;
+  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  const weekStart = safeDate(anchor);
+  if (numDays === 7) {
+    const dayOfWeek = anchor.getDay();
+    weekStart.setDate(anchor.getDate() - dayOfWeek);
+  }
+  const weekDates = Array.from({ length: numDays }, (_, i) => {
+    const d = safeDate(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+
+  const todayISO  = todayStr();
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'wk-wrap';
+  wrap.style.height = '100%';
+
+  const hdr = document.createElement('div');
+  hdr.className = 'wk-header';
+  const gutterHdr = document.createElement('div');
+  gutterHdr.className = 'wk-gutter-hdr';
+  gutterHdr.textContent = 'GMT+8';
+  hdr.appendChild(gutterHdr);
+
+  weekDates.forEach(d => {
+    const isToday = dateToStr(d) === todayISO;
+    const cell = document.createElement('div');
+    cell.className = `wk-day-hdr${isToday ? ' wk-today-hdr' : ''}`;
+    cell.innerHTML = `
+      <span class="wk-dname">${DAY_NAMES[d.getDay()]}</span>
+      <span class="wk-dnum${isToday ? ' wk-dnum-today' : ''}">${d.getDate()}</span>`;
+    hdr.appendChild(cell);
+  });
+  wrap.appendChild(hdr);
+
+  const body = document.createElement('div');
+  body.className = 'wk-body';
+  body.style.height = 'calc(100% - 64px)';
+
+  const gutterCol = document.createElement('div');
+  gutterCol.className = 'wk-gutter-col';
+  for (let h = START_H; h <= END_H; h++) {
+    const lbl = document.createElement('div');
+    lbl.className = 'wk-hour-lbl';
+    if (h < END_H) {
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const h12  = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+      lbl.textContent = `${h12}:00 ${ampm}`;
+    }
+    gutterCol.appendChild(lbl);
+  }
+  body.appendChild(gutterCol);
+
+  const daysArea = document.createElement('div');
+  daysArea.className = 'wk-days-area';
+
+  weekDates.forEach(d => {
+    const dateStr = dateToStr(d);
+    const isToday = dateStr === todayISO;
+
+    const col = document.createElement('div');
+    col.className = `wk-day-col${isToday ? ' wk-today-col' : ''}`;
+    col.dataset.date = dateStr;
+    col.style.height = `${TOTAL_H}px`;
+
+    for (let i = 0; i < N_HOURS; i++) {
+      const hline = document.createElement('div');
+      hline.className = 'wk-hline';
+      hline.style.top = `${i * HOUR_H}px`;
+      col.appendChild(hline);
+
+      const hfline = document.createElement('div');
+      hfline.className = 'wk-hfline';
+      hfline.style.top = `${i * HOUR_H + HOUR_H / 2}px`;
+      col.appendChild(hfline);
+    }
+    const bottomLine = document.createElement('div');
+    bottomLine.className = 'wk-hline';
+    bottomLine.style.top = `${TOTAL_H}px`;
+    col.appendChild(bottomLine);
+
+    const dayEvents = events.filter(ev => ev.date === dateStr)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    const overlapCols = [];
+    const evColMap    = new Map();
+    dayEvents.forEach(ev => {
+      const evS = timeToMin(ev.startTime);
+      let placed = false;
+      for (let ci = 0; ci < overlapCols.length; ci++) {
+        const last = overlapCols[ci][overlapCols[ci].length - 1];
+        if (timeToMin(last.endTime) <= evS) {
+          overlapCols[ci].push(ev);
+          evColMap.set(ev.id, ci);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        evColMap.set(ev.id, overlapCols.length);
+        overlapCols.push([ev]);
+      }
+    });
+    const numVisualCols = Math.max(overlapCols.length, 1);
+
+    dayEvents.forEach(ev => {
+      const startMin = timeToMin(ev.startTime);
+      const endMin   = timeToMin(ev.endTime);
+      if (startMin >= END_H * 60 || endMin <= START_H * 60) return;
+
+      const top    = Math.max(0, (startMin - START_H * 60) / 60 * HOUR_H);
+      const height = Math.max((endMin - startMin) / 60 * HOUR_H - 3, 18);
+
+      const lesson     = getLesson(ev.lessonId);
+      const batches    = (ev.batchIds || []).map(id => getBatch(id)).filter(Boolean);
+      const batch      = batches[0] || {};
+      const batchNames = batches.map(b => b.name).join(', ');
+      let color      = batch.colorHex || (EVENT_COLORS[batch.colorIndex % EVENT_COLORS.length] || EVENT_COLORS[0] || "#cccccc");
+      let textColor  = '#fff';
+      
+      if (ev.isUnavailability) {
+        color = '#e5e7eb'; // var(--gray-200)
+        textColor = '#4b5563'; // var(--gray-600)
+      }
+      
+      const trainers   = getEventTrainersText(ev);
+      const classrooms = (ev.classroomIds || []).map(id => getClassroom(id).name).join(', ');
+
+      const evVisCol = evColMap.get(ev.id) || 0;
+      const colW     = 100 / numVisualCols;
+      const leftPct  = evVisCol * colW;
+
+      const block = document.createElement('div');
+      block.className   = `wk-event ${ev.status === 'cancelled' ? 'cancelled' : ''}`;
+      block.dataset.evid = ev.id;
+      block.title = `${escapeHTML(getEventDisplayName(ev, lesson))}\n${fmtTime(ev.startTime)} – ${fmtTime(ev.endTime)}\n${trainers}`;
+      block.style.cssText =
+        `top:${top}px;height:${height}px;` +
+        `left:calc(${leftPct}% + 3px);width:calc(${colW}% - 6px);` +
+        `background:${color};color:${textColor};cursor:pointer;`;
+
+      let inner = `<div class="wk-ev-name">${escapeHTML(getEventDisplayName(ev, lesson))}</div>`;
+      if (height >= 36) inner += `<div class="wk-ev-time">${fmtTime(ev.startTime)} – ${fmtTime(ev.endTime)}</div>`;
+      if (height >= 56) inner += `<div class="wk-ev-meta">${classrooms} · ${trainers}</div>`;
+      if (height >= 76) inner += `<div class="wk-ev-batch">${batchNames}</div>`;
+      block.innerHTML = inner;
+
+      block.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showEventDetail(ev.id);
+      });
+
+      col.appendChild(block);
+    });
+
+    if (onEmptyClick) {
+      col.addEventListener('click', (e) => {
+        if (e.target.closest('[data-evid]')) return;
+        const rect     = col.getBoundingClientRect();
+        const relY     = e.clientY - rect.top + (body.scrollTop || 0);
+        const rawMin   = Math.round(relY / HOUR_H * 60 / 30) * 30 + START_H * 60;
+        const startStr = `${String(Math.floor(rawMin/60)).padStart(2,'0')}:${String(rawMin%60).padStart(2,'0')}`;
+        const endStr   = `${String(Math.floor(rawMin/60)+1).padStart(2,'0')}:${String(rawMin%60).padStart(2,'0')}`;
+        onEmptyClick(dateStr, startStr, endStr);
+      });
+    }
+
+    if (isToday) {
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      if (nowMin >= START_H * 60 && nowMin <= END_H * 60) {
+        const nowTop = (nowMin - START_H * 60) / 60 * HOUR_H;
+        const nowLine = document.createElement('div');
+        nowLine.className = 'wk-now-line';
+        nowLine.style.top = `${nowTop}px`;
+        col.appendChild(nowLine);
+      }
+    }
+
+    daysArea.appendChild(col);
+  });
+
+  body.appendChild(daysArea);
+  wrap.appendChild(body);
+  container.appendChild(wrap);
+
+  setTimeout(() => { if (body) body.scrollTop = (8 - START_H) * HOUR_H - 16; }, 30);
+};
+
+let currentModalClassroomId = null;
+
+const showClassroomSchedule = (crid) => {
+  const c = getClassroom(crid);
+  if (!c) return;
+
+  currentModalClassroomId = crid;
+  
+  let anchor = AppState.calendarDate || new Date();
+  if (isNaN(anchor.getTime())) anchor = new Date();
+  
+  const from = safeDate(anchor);
+  const dayOfWeek = from.getDay();
+  from.setDate(from.getDate() - dayOfWeek);
+  const to = new Date(from);
+  to.setDate(to.getDate() + 6);
+  
+  const fromStr = from.toLocaleDateString('en-SG', { month: 'short', day: 'numeric' });
+  const toStr   = to.toLocaleDateString('en-SG', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  document.getElementById('classroomModalTitle').innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
+      <span>Schedule: ${escapeHTML(c.name)}</span>
+      <div style="display:flex; align-items:center; gap: 8px; font-size:14px; font-weight:500;">
+        <button class="btn btn-ghost btn-sm" aria-label="Action" onclick="navClassroomModalCalendar(-1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span>${fromStr} – ${toStr}</span>
+        <button class="btn btn-ghost btn-sm" aria-label="Action" onclick="navClassroomModalCalendar(+1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  `;
+  
+  const events = AppState.events.filter(e => (e.classroomIds || []).includes(crid));
+  renderReusableWeekGrid('classroomModalCalendar', anchor, events, (dateStr, startStr, endStr) => {
+    closeModal('classroomScheduleModal');
+    switchView('schedule');
+    setTimeout(() => {
+      const formDate = document.getElementById('formDate');
+      if (formDate) {
+        formDate.value = dateStr;
+        document.getElementById('formStartTime').value = startStr;
+        document.getElementById('formEndTime').value = endStr;
+        const cb = document.querySelector(`input[name="classroomIds"][value="${crid}"]`);
+        if (cb) cb.checked = true;
+        checkAvailability();
+      }
+    }, 50);
+  });
+  openModal('classroomScheduleModal');
+};
+
+window.navClassroomModalCalendar = (dir) => {
+  if (!currentModalClassroomId) return;
+  let anchor = AppState.calendarDate || new Date();
+  if (isNaN(anchor.getTime())) anchor = new Date();
+  const d = safeDate(anchor);
+  d.setDate(d.getDate() + dir * 7);
+  AppState.calendarDate = d;
+  showClassroomSchedule(currentModalClassroomId);
+  
+  // Keep the main calendar in sync visually
+  if (AppState.activeView === 'calendar') {
+    renderCalendar();
+  }
+};
+
+
+   10b. LESSONS VIEW
+   ================================================================ */
+const renderLessons = () => {
+  const grid = document.getElementById('lessonsGrid');
+  if (!grid) return;
+
+  if (!AppState.topics || AppState.topics.length === 0) {
+    grid.innerHTML = '<p class="empty-state">No topics found.</p>';
+    return;
+  }
+
+  let html = '';
+  AppState.topics.forEach(topic => {
+    html += `
+      <div class="topic-section" style="margin-bottom:32px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid var(--border);">
+          <h2 style="margin:0; font-size:18px; color:var(--gray-900); font-weight:700;">${escapeHTML(topic.name)}</h2>
+          <button class="btn btn-ghost btn-sm edit-topic-btn" data-tid="${topic.id}">Edit Topic</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+    `;
+    
+    const modules = AppState.lessons.filter(l => l.topicId === topic.id);
+    if (modules.length === 0) {
+      html += `<p style="font-size:13px; color:var(--gray-500);">No modules under this topic.</p>`;
+    } else {
+      html += modules.map(l => {
+        const authTrs = (AppState.authMatrix[l.id] || []).map(id => getTrainer(id)).filter(Boolean);
+        const dur = l.durationHours !== undefined ? l.durationHours : (l.durationMins / 60);
+        return `
+          <div class="lesson-card" tabindex="0" role="button" style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="flex:1;">
+              <h3 style="margin:0 0 6px 0; font-size:16px; color:var(--gray-900);">${l.name}</h3>
+              <div style="display:flex; gap:16px; font-size:13px; color:var(--gray-600); margin-bottom:8px;">
+                <span>⏱️ ${dur} hrs</span>
+                ${(l.prerequisiteIds && l.prerequisiteIds.length > 0) ? `<span style="color:var(--brand-600);">↳ Prereqs: ${l.prerequisiteIds.map(pid => (getLesson(pid) || {}).name || 'Unknown').join(', ')}</span>` : ''}
+              </div>
+              <div style="font-size:12px; color:var(--gray-500); line-height:1.5;">
+                <strong>Authorised Trainers (${authTrs.length}):</strong> ${authTrs.map(t => t.name).join(', ') || 'None'}
+              </div>
+              ${l.remarks ? `<div style="margin-top:8px; font-size:12px; color:var(--gray-600); background:var(--gray-50); padding:6px 10px; border-radius:6px; border-left:3px solid var(--gray-300);"><em>${l.remarks}</em></div>` : ''}
+            </div>
+            <button class="btn btn-ghost btn-sm edit-lesson-btn" data-id="${l.id}" style="margin-left:16px; flex-shrink:0;">Edit</button>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    html += `
+        </div>
+      </div>
+    `;
+  });
+  grid.innerHTML = html;
+};
+
+const buildLessonTrainerDropdown = (selectedIds = []) => {
+  const dd = document.getElementById('lessonTrainerSelectDropdown');
+  const label = document.getElementById('lessonTrainerSelectLabel');
+  
+  if (AppState.trainers.length === 0) {
+    dd.innerHTML = '<div style="padding:12px;color:var(--gray-400);font-size:13px;">No trainers found</div>';
+    label.textContent = 'Select Trainers...';
+    return;
+  }
+
+  dd.innerHTML = AppState.trainers.map(t => {
+    const isSel = selectedIds.includes(t.id);
+    return `
+      <label class="custom-option">
+        <input type="checkbox" name="lessonTrainerIds" value="${t.id}" ${isSel ? 'checked' : ''} />
+        <span class="custom-option-name">${escapeHTML(t.name)}</span>
+      </label>
+    `;
+  }).join('');
+
+  const updateLabel = () => {
+    const checked = [...document.querySelectorAll('input[name="lessonTrainerIds"]:checked')];
+    if (checked.length === 0) label.textContent = 'Select Trainers...';
+    else if (checked.length === 1) label.textContent = '1 trainer selected';
+    else label.textContent = `${checked.length} trainers selected`;
+  };
+  
+  dd.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', updateLabel);
+  });
+  updateLabel();
+};
+
+const saveClassroom = (e) => {
+  e.preventDefault();
+  const id = document.getElementById('classroomId').value;
+  const name = document.getElementById('classroomName').value.trim();
+  const type = document.getElementById('classroomType').value.trim();
+  const pax = parseInt(document.getElementById('classroomPax').value, 10) || 0;
+  
+  if (!name) {
+    showToast('Please enter a classroom name.', 'warning');
+    return;
+  }
+  if (pax <= 0) {
+    showToast('Classroom capacity must be greater than 0.', 'warning');
+    return;
+  }
+  
+  if (id) {
+    const c = AppState.classrooms.find(cr => cr.id === id);
+    if (c) {
+      c.name = name;
+      c.type = type;
+      c.pax = pax;
+      c.capacity = pax;
+      showToast(`Classroom "${name}" updated!`, 'success');
+    }
+  } else {
+    const newId = `cr${uid()}`;
+    AppState.classrooms.push({ id: newId, name, type, pax, capacity: pax });
+    showToast(`Classroom "${name}" added!`, 'success');
+  }
+  
+  closeModal('classroomAddModal');
+  renderClassrooms();
+  
+  // Re-build any classroom dropdowns if needed
+  const crCheckboxes = document.getElementById('classroomCheckboxes');
+  if (crCheckboxes) {
+    const existingIds = [...crCheckboxes.querySelectorAll('input:checked')].map(cb => cb.value);
+    buildClassroomDropdown(existingIds);
+  }
+};
+
+const updateLessonPrerequisiteLabel = () => {
+  const container = document.getElementById('lessonPrerequisiteSelectDropdown');
+  const label = document.getElementById('lessonPrerequisiteSelectLabel');
+  if (!container || !label) return;
+  const checked = [...container.querySelectorAll('input:checked')].map(cb => cb.nextElementSibling.textContent);
+  label.textContent = checked.length > 0 ? checked.join(', ') : 'Select Prerequisites...';
+};
+
+const buildLessonPrerequisiteDropdown = (excludeId = null, selectedIds = []) => {
+  const container = document.getElementById('lessonPrerequisiteSelectDropdown');
+  if (!container) return;
+  const safeSelectedIds = Array.isArray(selectedIds) ? selectedIds : (selectedIds ? [selectedIds] : []);
+  
+  const html = AppState.lessons.filter(l => l.id !== excludeId).map(l => {
+    const isChecked = safeSelectedIds.includes(l.id);
+    return `
+      <label class="custom-option">
+        <input type="checkbox" name="lessonPrerequisiteIds" value="${l.id}" ${isChecked ? 'checked' : ''} onchange="updateLessonPrerequisiteLabel()">
+        <span class="custom-option-name">${l.name}</span>
+      </label>`;
+  }).join('');
+  container.innerHTML = html || '<div style="padding:8px 12px;font-size:13px;color:var(--gray-500)">No other lessons available</div>';
+  updateLessonPrerequisiteLabel();
+};
+
+const saveTopic = (e) => {
+  e.preventDefault();
+  const id = document.getElementById('topicId').value;
+  const name = document.getElementById('topicName').value.trim();
+  if (!name) return showToast('Please enter a topic name', 'warning');
+  
+  if (id) {
+    const t = AppState.topics.find(x => x.id === id);
+    if (t) t.name = name;
+  } else {
+    AppState.topics.push({ id: `top${uid()}`, name });
+  }
+  closeModal('topicModal');
+  saveState();
+  renderLessons();
+  showToast('Topic saved!', 'success');
+};
+
+const saveLesson = (e) => {
+  e.preventDefault();
+  const id = document.getElementById('lessonId').value;
+  const topicId = document.getElementById('lessonTopic').value;
+  const name = document.getElementById('lessonName').value.trim();
+  const duration = parseFloat(document.getElementById('lessonDuration').value) * 60;
+  const prerequisiteIds = [...document.querySelectorAll('input[name="lessonPrerequisiteIds"]:checked')].map(el => el.value);
+  const remarks = document.getElementById('lessonRemarks').value;
+  
+  const authorisedTrainerIds = [...document.querySelectorAll('input[name="lessonTrainerIds"]:checked')].map(el => el.value);
+
+  if (!name || isNaN(duration) || !topicId) {
+    showToast('Please fill in all required fields (Topic, Name, Duration).', 'warning');
+    return;
+  }
+  if (duration <= 0) {
+    showToast('Duration must be greater than 0.', 'warning');
+    return;
+  }
+
+  let lessonId = id;
+  if (id) {
+    const l = getLesson(id);
+    if (l) {
+      l.topicId = topicId;
+      l.name = name;
+      l.durationMins = duration;
+      delete l.durationHours; // ensure old durationHours doesn't override durationMins
+      l.prerequisiteIds = prerequisiteIds;
+      l.remarks = remarks || '';
+      showToast(`Module "${name}" updated!`, 'success');
+    }
+  } else {
+    lessonId = `ls${uid()}`;
+    AppState.lessons.push({ id: lessonId, topicId, name, durationMins: duration, prerequisiteIds: prerequisiteIds, remarks: remarks || '' });
+    showToast(`Module "${name}" created!`, 'success');
+  }
+
+  AppState.authMatrix[lessonId] = authorisedTrainerIds;
+  
+  closeModal('lessonModal');
+  renderLessons();
+};
+
+
+
+   13. AUTHORISATION MATRIX RENDER
+   ================================================================ */
+const renderMatrix = () => {
+  const wrapper = document.querySelector('.matrix-table-wrapper');
+  if (!wrapper) return;
+  const trainers = AppState.trainers;
+  const lessons  = AppState.lessons;
+  const topics   = AppState.topics || [];
+
+  let html = '';
+
+  topics.forEach(topic => {
+    const topicLessons = lessons.filter(l => l.topicId === topic.id);
+    if (topicLessons.length === 0) return;
+
+    // Determine which trainers are authorised for at least one lesson in this topic
+    const validTrainers = trainers.filter(t => {
+      return topicLessons.some(l => (AppState.authMatrix[l.id] || []).includes(t.id));
+    });
+
+    if (validTrainers.length === 0) {
+      html += `<div style="margin-bottom: 32px; background:#fff; padding:16px; border-radius:12px; border:1px solid var(--border);">
+                 <h2 style="font-size:16px; margin:0 0 8px 0; color:var(--gray-900);">${escapeHTML(topic.name)}</h2>
+                 <p style="font-size:13px; color:var(--gray-500); margin:0;">No trainers authorised for modules under this topic.</p>
+               </div>`;
+      return;
+    }
+
+    let tableHtml = `<div style="margin-bottom: 32px; background:#fff; padding:24px; border-radius:12px; border:1px solid var(--border); box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+      <h2 style="font-size:18px; margin:0 0 16px 0; color:var(--brand-700);">${escapeHTML(topic.name)}</h2>
+      <div style="overflow-x:auto;">
+      <table class="matrix-table" style="margin-bottom:0;">
+        <thead>
+          <tr>
+            <th style="min-width: 200px;">Module</th>`;
+            
+    validTrainers.forEach(t => { tableHtml += `<th style="text-align:center;">${escapeHTML(t.name)}</th>`; });
+    
+    tableHtml += `</tr></thead><tbody>`;
+
+    topicLessons.forEach(l => {
+      tableHtml += `<tr><td>${l.name}</td>`;
+      validTrainers.forEach(t => {
+        const auth = (AppState.authMatrix[l.id] || []).includes(t.id);
+        tableHtml += `<td style="text-align:center;">${auth
+          ? '<span class="matrix-check">✓</span>'
+          : '<span class="matrix-x" style="color:var(--gray-300);">—</span>'
+        }</td>`;
+      });
+      tableHtml += '</tr>';
+    });
+
+    tableHtml += `</tbody></table></div></div>`;
+    html += tableHtml;
+  });
+
+  if (html === '') {
+    html = `<div style="padding:24px; color:var(--gray-500);">No topics/modules found.</div>`;
+  }
+
+  wrapper.innerHTML = html;
+};
+
+
+
+// --- Auto-generated globals for Vite migration ---
+window.saveTopic = saveTopic;
+window.renderMatrix = renderMatrix;
+window.updateTrainerCoursesLabel = updateTrainerCoursesLabel;
+window.updateLessonPrerequisiteLabel = updateLessonPrerequisiteLabel;
+window.saveTrainer = saveTrainer;
+window.renderLessons = renderLessons;
+window.showClassroomSchedule = showClassroomSchedule;
+window.saveAdmin = saveAdmin;
+window.buildTrainerCoursesDropdown = buildTrainerCoursesDropdown;
+window.currentModalClassroomId = currentModalClassroomId;
+window.buildLessonTrainerDropdown = buildLessonTrainerDropdown;
+window.saveClassroom = saveClassroom;
+window.buildLessonPrerequisiteDropdown = buildLessonPrerequisiteDropdown;
+window.renderTrainers = renderTrainers;
+window.renderClassrooms = renderClassrooms;
+window.saveLesson = saveLesson;
+window.renderReusableWeekGrid = renderReusableWeekGrid;

@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BCTSS Scheduling System</title>
+  <meta name="description" content="A comprehensive scheduling system for managing training programmes, lessons, trainers, and classrooms with real-time conflict detection." />
+  <meta property="og:title" content="BCTSS Scheduling System" />
+  <meta property="og:description" content="A comprehensive scheduling system for managing training programmes, lessons, trainers, and classrooms with real-time conflict detection." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    #global-error-reporter { display:none; position:fixed; top:0; left:0; right:0; background:red; color:white; padding:20px; z-index:99999; font-family:monospace; }
+  </style>
+  <script>
+    window.addEventListener('error', function(e) {
+      const el = document.getElementById('global-error-reporter');
+      if (el) {
+        el.style.display = 'block';
+        el.innerHTML += '<b>JS Error:</b> ' + (e.error ? e.error.message : e.message) + '<br><b>Line:</b> ' + e.lineno + '<br><b>Stack:</b><br><pre>' + (e.error && e.error.stack ? e.error.stack : '') + '</pre><hr>';
+      }
+    });
+  </script>
+</head>
+<body>
+  <div id="global-error-reporter"></div>
+
+  <!-- ============================================================
+       LOGIN SPLASH SCREEN
+  ============================================================ -->
+  <div id="loginSplash" class="splash-screen">
+    <div class="splash-container">
+      <div class="logo" style="justify-content:center; margin-bottom:32px;">
+        <div class="logo-icon"></div>
+        <span class="logo-text">BCTSS Scheduling</span>
+      </div>
+      <h2 class="splash-title">Sign In</h2>
+      <div class="splash-grid">
+        <!-- Admin Login Card -->
+        <div class="splash-card">
+          <h3 class="splash-card-title">Login as Admin</h3>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="splashAdminSelect">Select Profile</label>
+            <select id="splashAdminSelect" style="width:100%;">
+              <option value="">— Select your profile —</option>
+              <!-- JS populated -->
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="splashAdminPassword">Password</label>
+            <input type="password" id="splashAdminPassword" placeholder="Enter password (123)" />
+            <div id="splashAdminError" style="color:var(--danger); font-size:12px; margin-top:4px; display:none;">Incorrect password.</div>
+          </div>
+          <button class="btn btn-primary" id="splashAdminLoginBtn" style="width:100%;">Sign In</button>
+        </div>
+        <!-- Trainer Login Card -->
+        <div class="splash-card">
+          <h3 class="splash-card-title">Login as Trainer</h3>
+          <p style="font-size:14px; color:var(--gray-500); margin-bottom:16px;">Select your trainer profile and sign in.</p>
+          <button class="btn btn-outline" id="splashTrainerSelectBtn" style="width:100%;">Select Profile</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="appContainer" style="display:none; height:100%; width:100%;">
+  <!-- ============================================================
+       SIDEBAR NAVIGATION
+  ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">BCTSS</span>
+          <span class="logo-sub">Scheduling System</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar" title="Collapse sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ul class="sidebar-nav" id="adminNav">
+        <li><a href="#" class="nav-item active" data-view="dashboard">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          Dashboard
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="calendar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          Schedule
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="batches">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+          Batches
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="trainers">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Trainers
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="admins">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Our Admins
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="classrooms">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          Classrooms
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="lessons">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          Topics & Modules
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="matrix">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          Auth Matrix
+        </a></li>
+      </ul>
+      <ul class="sidebar-nav" id="trainerNav" style="display:none;">
+        <li><a href="#" class="nav-item" data-view="trainer-dashboard">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          My Dashboard
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="trainer-schedule">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          My Schedule
+        </a></li>
+        <li><a href="#" class="nav-item" data-view="trainer-understudy">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+          Understudy Portal
+        </a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="version-badge" style="margin-bottom:12px;">v1.0 Prototype</div>
+      <button class="btn btn-outline btn-sm" id="signOutBtn" style="width:100%; justify-content:center; color: white; border-color: rgba(255,255,255,0.5);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT AREA
+  ============================================================ -->
+  <main class="main-content" id="mainContent">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="topbar-menu-btn" id="topbarMenuBtn" aria-label="Open Sidebar Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div class="breadcrumb" id="breadcrumb">
+          <span>Dashboard</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <select id="roleSwitcher" class="cal-batch-filter" aria-label="Switch User Role" style="margin-right: 12px; font-weight:600;">
+          <option value="admin">View As: Admin</option>
+          <option value="trainer">View As: Trainer</option>
+        </select>
+        <div class="topbar-date" id="topbarDate">Wednesday, 26 Jan 2026</div>
+        <button class="btn btn-primary" id="quickScheduleBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Schedule Lesson
+        </button>
+      </div>
+    </header>
+
+    <!-- ======================= VIEW: DASHBOARD ======================= -->
+    <section class="view active" id="view-dashboard">
+      <header class="view-header">
+        <h1>Dashboard</h1>
+        <p class="view-subtitle">Overview of your training programme operations</p>
+      </header>
+
+      <!-- Metric Cards -->
+      <div class="metrics-grid" id="metricsGrid"></div>
+
+      <!-- Alerts Panel -->
+      <div id="dashboardAlerts" style="margin-bottom: 8px;"></div>
+
+      <!-- Row: Today's Schedule + Upcoming -->
+      <div class="dashboard-row">
+        <div class="dashboard-card flex-2">
+          <div class="card-header">
+            <h3>Today's Schedule</h3>
+            <span class="card-badge" id="todayCount">0 lessons</span>
+          </div>
+          <div class="today-schedule" id="todaySchedule">
+            <div class="empty-state-small">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+              </svg>
+              <p>No lessons scheduled for today</p>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-card flex-1">
+          <div class="card-header">
+            <h3>Active Batches</h3>
+          </div>
+          <div id="activeBatchesList" class="resource-list"></div>
+        </div>
+      </div>
+
+      <!-- Row: Recent Activity + Utilisation -->
+      <div class="dashboard-row">
+        <div class="dashboard-card flex-1">
+          <div class="card-header">
+            <h3>Classroom Utilisation</h3>
+            <span class="card-badge">Today</span>
+          </div>
+          <div id="classroomUtilisation" class="utilisation-list"></div>
+        </div>
+        <div class="dashboard-card flex-1">
+          <div class="card-header">
+            <h3>Trainer Availability</h3>
+            <span class="card-badge">Today</span>
+          </div>
+          <div id="trainerAvailability" class="utilisation-list"></div>
+        </div>
+        <div class="dashboard-card flex-1">
+          <div class="card-header">
+            <h3>Upcoming Lessons</h3>
+          </div>
+          <div id="upcomingLessons" class="resource-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: CALENDAR ======================= -->
+    <section class="view" id="view-calendar">
+      <header class="view-header">
+        <h1>Calendar</h1>
+        <div class="view-header-actions">
+          <select id="calBatchFilter" class="cal-batch-filter" aria-label="Filter Calendar by Batch">
+            <option value="all">All Batches</option>
+          </select>
+          <div class="view-toggle-group">
+            <button class="view-toggle active" id="calMonthBtn" data-calview="month">Month</button>
+            <button class="view-toggle" id="calWeekBtn" data-calview="week">Week</button>
+            <button class="view-toggle" id="calDayBtn" data-calview="day">Day</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="calPrevBtn" aria-label="Previous">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span class="cal-period-label" id="calPeriodLabel"></span>
+          <button class="btn btn-ghost btn-sm" id="calNextBtn" aria-label="Next">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-sm" id="calTodayBtn">Today</button>
+        </div>
+      </header>
+
+      <!-- Month view -->
+      <div class="calendar-container" id="calendarMonthContainer">
+        <div class="cal-weekday-headers" id="calWeekdayHeaders"></div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+
+      <!-- Week view -->
+      <div class="calendar-container hidden" id="calendarWeekContainer">
+        <div class="week-view" id="weekView">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Day view -->
+      <div class="calendar-container hidden" id="calendarDayContainer">
+        <div class="week-view" id="dayView">
+          <!-- Rendered by JS (uses the same week-view grid styles) -->
+        </div>
+      </div>
+
+      <!-- Batch Schedule Panel (shown when a specific batch is selected) -->
+      <div id="batchSchedulePanel" class="batch-schedule-panel hidden"></div>
+    </section>
+
+    <!-- ======================= VIEW: SCHEDULE LESSON ======================= -->
+    <section class="view" id="view-schedule">
+      <header class="view-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h1>Schedule a Lesson</h1>
+          <p class="view-subtitle">Fill in the details below. Conflicts will be detected in real-time.</p>
+        </div>
+        <button class="btn btn-secondary" onclick="switchView('calendar')" style="display:flex; align-items:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back to Calendar
+        </button>
+      </header>
+
+      <div class="schedule-layout">
+        <!-- Left: Form -->
+        <div class="schedule-form-card">
+          <form id="scheduleForm" novalidate>
+
+            <div class="form-group">
+              <label>Batch(es) <span class="required">*</span></label>
+              <div class="custom-select" id="batchCustomSelect">
+                <div class="custom-select-header" onclick="document.getElementById('batchCustomSelect').classList.toggle('open')">
+                  <span class="custom-select-label" id="batchSelectLabel">Select Batches...</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="custom-select-options" id="batchSelectDropdown">
+                  <!-- Checkboxes populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="formTopic">Topic <span class="required">*</span></label>
+                <select id="formTopic" required>
+                  <option value="">— Select Topic —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="formLesson">Module <span class="required">*</span></label>
+                <select id="formLesson" required>
+                  <option value="">— Select Module —</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="formDate">Date <span class="required">*</span></label>
+                <input type="date" id="formDate" required onchange="updateFormAssistant()" />
+              </div>
+              <div class="form-group">
+                <label for="formStartTime">Start Time <span class="required">*</span></label>
+                <select id="formStartTime" required onchange="updateFormAssistant()"></select>
+              </div>
+              <div class="form-group">
+                <label for="formEndTime">End Time <span class="required">*</span></label>
+                <select id="formEndTime" required onchange="updateFormAssistant()"></select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Classroom(s) <span class="required">*</span></label>
+              <div class="custom-select" id="classroomCustomSelect">
+                <div class="custom-select-header" onclick="document.getElementById('classroomCustomSelect').classList.toggle('open')">
+                  <span class="custom-select-label" id="classroomSelectLabel">Select Classrooms...</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="custom-select-options" id="classroomSelectDropdown">
+                  <!-- Checkboxes populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Trainer(s) <span class="required">*</span></label>
+              <div class="custom-select" id="trainerCustomSelect">
+                <div class="custom-select-header" onclick="document.getElementById('trainerCustomSelect').classList.toggle('open')">
+                  <span class="custom-select-label" id="trainerSelectLabel">Select Trainers...</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="custom-select-options" id="trainerSelectDropdown">
+                  <div style="padding:12px; color:var(--gray-400); font-size:13px;">Select a lesson first</div>
+                </div>
+              </div>
+              <div style="margin-top: 8px;">
+                <label style="font-weight: 400; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="formIsCovering" style="margin: 0;" />
+                  Mark as Covering Lesson
+                </label>
+              </div>
+            </div>
+
+            <!-- Conflict / Availability Panel (inline) -->
+            <div class="availability-panel" id="availabilityPanel" style="display:none;">
+              <div class="avail-section">
+                <h4>Classroom Availability</h4>
+                <div id="classroomAvailList"></div>
+              </div>
+              <div class="avail-section">
+                <h4>Trainer Availability</h4>
+                <div id="trainerAvailList"></div>
+              </div>
+            </div>
+
+            <!-- Conflict Alerts -->
+            <div id="conflictAlerts" class="conflict-alerts"></div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-ghost" id="checkAvailBtn">Check Availability</button>
+              <button type="submit" class="btn btn-primary" id="saveScheduleBtn">Save Schedule</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Scheduling Assistant Panel -->
+        <div class="assistant-sidebar" id="formAssistantPanel">
+          <div class="assistant-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            Scheduling Assistant
+          </div>
+          <div id="scheduleDayViewContainer" style="height: 400px; overflow-y: auto; margin-top: 16px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; display: none;"></div>
+          <div class="assistant-body" id="formAssistantBody">
+            <p class="assistant-hint">Select a lesson to get smart suggestions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: BATCHES ======================= -->
+    <section class="view" id="view-batches">
+      <header class="view-header">
+        <h1>Training Batches</h1>
+        <div class="view-header-actions">
+          <select id="batchStatusFilter" class="cal-batch-filter" aria-label="Filter Batches by Status">
+            <option value="all">All Status</option>
+            <option value="active" selected>Active</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="completed">Completed</option>
+          </select>
+          <button class="btn btn-primary btn-sm" id="newBatchBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            New Batch
+          </button>
+        </div>
+      </header>
+      <div class="batches-grid" id="batchesGrid"></div>
+    </section>
+
+    <!-- ======================= VIEW: ADMINS ======================= -->
+    <section class="view" id="view-admins">
+      <header class="view-header">
+        <h1>Our Admins</h1>
+        <button class="btn btn-primary btn-sm" id="newAdminBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          New Admin
+        </button>
+      </header>
+      <div class="trainers-grid" id="adminsGrid"></div>
+    </section>
+
+    <!-- ======================= VIEW: TRAINERS ======================= -->
+    <section class="view" id="view-trainers">
+      <header class="view-header">
+        <h1>Our Trainers</h1>
+        <button class="btn btn-primary btn-sm" id="newTrainerBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          New Trainer
+        </button>
+      </header>
+      <div class="trainers-grid" id="trainersGrid"></div>
+    </section>
+
+    <!-- ======================= VIEW: CLASSROOMS ======================= -->
+    <section class="view" id="view-classrooms">
+      <header class="view-header" style="justify-content:space-between">
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <h1>Classrooms</h1>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <label style="font-size:14px; font-weight:500;">Check Availability:</label>
+            <input type="date" id="classroomSearchDate" class="form-group" style="margin-bottom:0; width:180px;" />
+            <button class="btn btn-primary btn-sm" id="classroomSearchBtn">Search</button>
+            <button class="btn btn-outline btn-sm" id="classroomSearchClearBtn" style="display:none;">Clear</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="newClassroomBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add Classroom
+        </button>
+      </header>
+      <div class="classrooms-grid" id="classroomsGrid"></div>
+    </section>
+
+    <!-- ======================= VIEW: TOPICS & MODULES ======================= -->
+    <section class="view" id="view-lessons">
+      <header class="view-header">
+        <div>
+          <h1>Topics & Modules</h1>
+          <p class="view-subtitle">Manage curriculum topics and the individual training modules within them.</p>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-ghost" id="newTopicBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Topic
+          </button>
+          <button class="btn btn-primary" id="newLessonBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Module
+          </button>
+        </div>
+      </header>
+      <div class="lessons-grid" id="lessonsGrid" style="display: flex; flex-direction: column; gap: 24px;"></div>
+    </section>
+
+    <!-- ======================= VIEW: AUTH MATRIX ======================= -->
+    <section class="view" id="view-matrix">
+      <header class="view-header">
+        <h1>Trainer Authorisation Matrix</h1>
+        <p class="view-subtitle">Shows which trainers are authorised to deliver each lesson.</p>
+      </header>
+      <div class="matrix-container">
+        <div class="matrix-table-wrapper">
+          <table class="matrix-table" id="matrixTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: ASSISTANT ======================= -->
+    <section class="view" id="view-assistant">
+      <header class="view-header">
+        <h1>Scheduling Assistant</h1>
+        <p class="view-subtitle">Select a lesson and date to get intelligent suggestions for available resources and optimal scheduling.</p>
+      </header>
+      <div class="assistant-layout">
+        <div class="assistant-controls card">
+          <h3>Find Availability</h3>
+          <div class="form-group">
+            <label for="assistTopic">Topic</label>
+            <select id="assistTopic" aria-label="Select Topic">
+              <option value="">— All Topics —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="assistLesson">Module</label>
+            <select id="assistLesson" aria-label="Select Lesson">
+              <option value="">— Select Module —</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="assistDate">Date</label>
+              <input type="date" id="assistDate" />
+            </div>
+            <div class="form-group">
+              <label for="assistDuration">Duration (hours)</label>
+              <input type="number" id="assistDuration" min="0.5" max="8" step="0.5" value="3" />
+            </div>
+          </div>
+          <button class="btn btn-primary" id="runAssistantBtn" style="width:100%">Find Available Slots</button>
+        </div>
+
+        <div class="assistant-results card" id="assistantResults">
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <h4>No Results Yet</h4>
+            <p>Select a lesson and date, then click "Find Available Slots"</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: TRAINER PORTAL DASHBOARD ======================= -->
+    <section class="view" id="view-trainer-dashboard">
+      <header class="view-header">
+        <h1 id="trainerPortalGreeting">Welcome, Trainer</h1>
+      </header>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; max-width: 1000px;">
+        <div class="dashboard-card">
+          <h3>Your Next Upcoming Lesson</h3>
+          <div id="trainerNextLesson" style="margin-top:16px;"></div>
+        </div>
+        <div class="dashboard-card">
+          <h3>Your Teaching Stats</h3>
+          <div id="trainerStats" style="margin-top:16px;"></div>
+        </div>
+      </div>
+      <div style="max-width: 1000px;">
+        <h2 style="margin-top: 40px; margin-bottom: 16px; border-bottom: 2px solid var(--gray-200); padding-bottom: 8px; color:var(--gray-800); font-size: 20px;">Cover Management</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+          <div class="dashboard-card">
+            <h3>Incoming Cover Requests</h3>
+            <p style="font-size:13px; color:var(--gray-500); margin:4px 0 12px;">Trainers asking you to cover.</p>
+            <div id="trainerCoverRequests" style="display:flex; flex-direction:column; gap:12px;"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>My Sent Cover Requests</h3>
+            <p style="font-size:13px; color:var(--gray-500); margin:4px 0 12px;">Classes you have requested cover for.</p>
+            <div id="trainerMyCoverRequests" style="display:flex; flex-direction:column; gap:12px;"></div>
+          </div>
+        </div>
+
+        <h2 style="margin-top: 40px; margin-bottom: 16px; border-bottom: 2px solid var(--gray-200); padding-bottom: 8px; color:var(--gray-800); font-size: 20px;">Understudy Management</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+          <div class="dashboard-card">
+            <h3>Incoming Understudy Requests (Inbox)</h3>
+            <p style="font-size:13px; color:var(--gray-500); margin:4px 0 12px;">Other trainers asking to understudy your classes.</p>
+            <div id="understudyInboxList" style="display:flex; flex-direction:column; gap:12px;"></div>
+          </div>
+          <div class="dashboard-card">
+            <h3>My Sent Understudy Requests</h3>
+            <p style="font-size:13px; color:var(--gray-500); margin:4px 0 12px;">Track the status of your requests.</p>
+            <div id="understudyOutboxList" style="display:flex; flex-direction:column; gap:12px;"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================= VIEW: TRAINER UNDERSTUDY PORTAL ======================= -->
+    <section class="view" id="view-trainer-understudy">
+      <header class="view-header">
+        <h1>Understudy Portal</h1>
+      </header>
+      
+      <div style="display:grid; grid-template-columns: 1fr; gap:24px; max-width: 600px; margin-top: 24px;">
+        <div class="dashboard-card" style="border-top:4px solid var(--brand-500);">
+          <h3>Find Modules to Understudy</h3>
+          <p style="font-size:13px; color:var(--gray-500); margin:4px 0 12px;">Select a module to see upcoming classes taught by other trainers.</p>
+          <div class="form-group">
+            <select id="understudyModuleSelect" class="input-modern" onchange="renderUnderstudyOpportunities(this.value)">
+              <option value="">— Select a Module —</option>
+            </select>
+          </div>
+          <div id="understudyOpportunitiesList" style="margin-top:16px; display:flex; flex-direction:column; gap:12px; max-height:400px; overflow-y:auto;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= VIEW: TRAINER PORTAL SCHEDULE ======================= -->
+    <section class="view" id="view-trainer-schedule">
+      <header class="view-header" style="justify-content:space-between">
+        <h1>My Schedule</h1>
+        <div style="display:flex; align-items:center; gap: 16px;">
+          <button class="btn btn-primary btn-sm" id="newUnavailabilityBtn">+ Add Leave/Busy</button>
+          <div style="display:flex; align-items:center; gap: 8px;">
+            <button class="btn btn-ghost btn-sm" onclick="navTrainerCalendar(-1)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span id="trainerSchedulePeriod" style="font-size:14px; font-weight:500;"></span>
+            <button class="btn btn-ghost btn-sm" onclick="navTrainerCalendar(+1)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+      <div class="dashboard-card" style="max-width: 1000px; padding:0;">
+        <div id="trainerScheduleGrid" class="week-view" style="height: 600px;"></div>
+      </div>
+    </section>
+
+  </main>
+  </div> <!-- End of appContainer -->
+
+  <!-- ============================================================
+       MODALS
+  ============================================================ -->
+
+  <!-- Batch Modal -->
+  <div class="modal-overlay" id="batchModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="batchModalTitle">
+      <header class="modal-header">
+        <h2 id="batchModalTitle">Create New Batch</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeBatchModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <form id="batchForm" novalidate>
+          <input type="hidden" id="batchId" />
+          <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label for="batchName">Batch Name <span class="required">*</span></label>
+              <input type="text" id="batchName" placeholder="e.g. Batch 2026-01" required />
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Colour</label>
+              <div id="batchColorGrid" style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; margin-top: 4px;"></div>
+              <input type="hidden" id="batchColor" value="#3b82f6" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="batchStart">Start Date <span class="required">*</span></label>
+              <input type="date" id="batchStart" required />
+            </div>
+            <div class="form-group">
+              <label for="batchEnd">End Date</label>
+              <input type="date" id="batchEnd" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="batchStudents">Number of Trainees <span class="required">*</span></label>
+              <input type="number" id="batchStudents" min="1" max="200" placeholder="e.g. 25" required />
+            </div>
+            <div class="form-group">
+              <label for="batchStatus">Status <span class="required">*</span></label>
+              <select id="batchStatus" required>
+                <option value="active">Active</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="batchHomeroom">Homeroom (Default Classroom)</label>
+            <select id="batchHomeroom">
+              <option value="">None</option>
+              <!-- JS populated -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Course Mentor(s)</label>
+            <div class="custom-select" id="mentorCustomSelect">
+              <div class="custom-select-header" onclick="document.getElementById('mentorCustomSelect').classList.toggle('open')">
+                <span class="custom-select-label" id="mentorSelectLabel">Select Mentors...</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+              <div class="custom-select-options" id="mentorSelectDropdown">
+                <!-- JS populated -->
+              </div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="cancelBatchBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveBatchBtn">Save Batch</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- Classroom Add Modal -->
+  <div class="modal-overlay" id="classroomAddModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="classroomAddModalTitle">
+      <header class="modal-header">
+        <h2 id="classroomAddModalTitle">Add New Classroom</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeClassroomAddModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <form id="classroomForm" novalidate>
+          <input type="hidden" id="classroomId" />
+          <div class="form-group">
+            <label for="classroomName">Classroom Name <span class="required">*</span></label>
+            <input type="text" id="classroomName" placeholder="e.g. Range Alpha" required />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label for="classroomType">Type</label>
+              <input type="text" id="classroomType" placeholder="e.g. Lecture Room" />
+            </div>
+            <div class="form-group">
+              <label for="classroomPax">Pax (Capacity)</label>
+              <input type="number" id="classroomPax" placeholder="e.g. 40" />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="cancelClassroomBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveClassroomBtn">Save Classroom</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+  <!-- Topic Modal -->
+  <div class="modal-overlay" id="topicModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="topicModalTitle">
+      <header class="modal-header">
+        <h2 id="topicModalTitle">Add New Topic</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeTopicModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <form id="topicForm" novalidate>
+          <input type="hidden" id="topicId" />
+          <div class="form-group">
+            <label for="topicName">Topic Name <span class="required">*</span></label>
+            <input type="text" id="topicName" placeholder="e.g. Leadership" required />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="cancelTopicBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveTopicBtn">Save Topic</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- Unavailability / Leave Modal -->
+  <div class="modal-overlay" id="unavailabilityModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="unavailabilityModalTitle">
+      <header class="modal-header">
+        <h2 id="unavailabilityModalTitle">Add Unavailability</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeUnavailabilityModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <form id="unavailabilityForm" novalidate>
+          <input type="hidden" id="unavailabilityId" />
+          <div class="form-row">
+            <div class="form-group">
+              <label for="unavailType">Type <span class="required">*</span></label>
+              <select id="unavailType" required>
+                <option value="leave">Leave</option>
+                <option value="wfh">Work From Home (WFH)</option>
+                <option value="busy">Busy (Other)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="unavailDate">Start Date <span class="required">*</span></label>
+              <input type="date" id="unavailDate" required />
+            </div>
+            <div class="form-group">
+              <label for="unavailEndDate">End Date</label>
+              <input type="date" id="unavailEndDate" placeholder="Optional" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="unavailStartTime">Start Time <span class="required">*</span></label>
+              <select id="unavailStartTime" required></select>
+            </div>
+            <div class="form-group">
+              <label for="unavailEndTime">End Time <span class="required">*</span></label>
+              <select id="unavailEndTime" required></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="unavailReason">Remarks / Reason</label>
+            <input type="text" id="unavailReason" placeholder="e.g. Annual Leave, Medical, Out of Office" />
+          </div>
+          <div class="modal-actions" style="justify-content:space-between">
+            <button type="button" class="btn btn-ghost" id="deleteUnavailabilityBtn" style="color:var(--danger); display:none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              Delete
+            </button>
+            <div>
+              <button type="button" class="btn btn-ghost" id="cancelUnavailabilityBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveUnavailabilityBtn">Save</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- Lesson (Module) Modal -->
+  <div class="modal-overlay" id="lessonModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="lessonModalTitle">
+      <header class="modal-header">
+        <h2 id="lessonModalTitle">Add New Module</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeLessonModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <form id="lessonForm" novalidate>
+          <input type="hidden" id="lessonId" />
+          <div class="form-group">
+            <label for="lessonTopic">Topic <span class="required">*</span></label>
+            <select id="lessonTopic" required>
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="lessonName">Module Name <span class="required">*</span></label>
+            <input type="text" id="lessonName" placeholder="e.g. Basic Firearms Training" required />
+          </div>
+          <div class="form-group">
+            <label for="lessonDuration">Default Duration (hours) <span class="required">*</span></label>
+            <input type="number" id="lessonDuration" value="3" min="0.5" step="0.5" required />
+          </div>
+          <div class="form-group">
+            <label>Prerequisite Module(s)</label>
+            <div class="custom-select" id="lessonPrerequisiteSelect">
+              <div class="custom-select-trigger" id="lessonPrerequisiteTrigger">
+                <span class="custom-select-label" id="lessonPrerequisiteSelectLabel">Select Prerequisites...</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+              <div class="custom-select-options" id="lessonPrerequisiteSelectDropdown">
+                <!-- Checkboxes populated by JS -->
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="lessonRemarks">Remarks</label>
+            <textarea id="lessonRemarks" rows="2" placeholder="Any special notes or requirements..." style="width:100%; border:1px solid var(--border); border-radius:var(--radius-md); padding:8px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Authorised Trainers</label>
+            <div class="custom-select" id="lessonTrainerSelect">
+              <div class="custom-select-trigger" id="lessonTrainerTrigger">
+                <span class="custom-select-label" id="lessonTrainerSelectLabel">Select Trainers...</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+              <div class="custom-select-options" id="lessonTrainerSelectDropdown">
+                <!-- Checkboxes populated by JS -->
+              </div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="cancelLessonBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveLessonBtn">Save Module</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- Admin Modal -->
+  <div class="modal-overlay" id="adminModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="adminModalTitle">
+      <header class="modal-header">
+        <h2 id="adminModalTitle">Add New Admin</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeAdminModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <form id="adminForm" novalidate>
+          <input type="hidden" id="adminId" />
+          <div class="form-group">
+            <label for="adminName">Admin Name <span class="required">*</span></label>
+            <input type="text" id="adminName" placeholder="e.g. Adrea" required />
+          </div>
+          <div class="form-group">
+            <label for="adminPassword">Password <span class="required">*</span></label>
+            <input type="password" id="adminPassword" placeholder="Enter password" required />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="cancelAdminBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveAdminBtn">Save Admin</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- Trainer Modal -->
+  <div class="modal-overlay" id="trainerModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="trainerModalTitle">
+      <header class="modal-header">
+        <h2 id="trainerModalTitle">Add New Trainer</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeTrainerModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <form id="trainerForm" novalidate>
+          <input type="hidden" id="trainerId" />
+          
+          <div id="trainerModalStats" style="display:none; background:var(--gray-50); padding:12px; border-radius:8px; margin-bottom:16px; border:1px solid var(--border);">
+            <div style="font-size:12px; color:var(--gray-600); margin-bottom:4px;" id="trainerModalHrs">⏳ 0 teaching hours this month</div>
+            <div style="font-size:12px; color:var(--gray-600); margin-bottom:8px;" id="trainerModalToday">✅ Available today</div>
+            <div id="trainerModalUnavail"></div>
+          </div>
+          
+          <div class="form-group">
+            <label for="trainerName">Trainer Name <span class="required">*</span></label>
+            <input type="text" id="trainerName" placeholder="e.g. John Doe" required />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label for="trainerInitials">Initials <span class="required">*</span></label>
+              <input type="text" id="trainerInitials" placeholder="e.g. JD" maxlength="3" required />
+            </div>
+            <div class="form-group">
+              <label for="trainerType">Type</label>
+              <select id="trainerType">
+                <option value="Full Time">Full Time</option>
+                <option value="Adjunct">Adjunct</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Qualified Courses</label>
+            <div class="custom-select" id="trainerCoursesCustomSelect">
+              <div class="custom-select-header" onclick="document.getElementById('trainerCoursesCustomSelect').classList.toggle('open')">
+                <span class="custom-select-label" id="trainerCoursesSelectLabel">Select Courses...</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+              <div class="custom-select-options" id="trainerCoursesSelectDropdown">
+                <!-- JS populated -->
+              </div>
+            </div>
+          </div>
+          <div class="form-group" id="trainerRecordsSection" style="display:none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
+            <label>Past Teaching Records</label>
+            <div id="trainerRecordsList" style="max-height: 200px; overflow-y: auto; font-size: 13px; color: var(--gray-600); display:flex; flex-direction:column; gap:8px;">
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="cancelTrainerBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveTrainerBtn">Save Trainer</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- Trainer Leave Requests Modal -->
+  <div class="modal-overlay" id="trainerLeaveModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="trainerLeaveModalTitle">
+      <header class="modal-header">
+        <h2 id="trainerLeaveModalTitle">Leave Requests</h2>
+        <button class="modal-close" aria-label="Close modal" onclick="closeModal('trainerLeaveModal')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body" id="trainerLeaveModalBody" style="max-height: 400px; overflow-y: auto;">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+  </div>
+
+  <!-- Classroom Schedule Modal -->
+  <div class="modal-overlay" id="classroomScheduleModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="classroomModalTitle" style="max-width: 1000px; width: 90vw;">
+      <header class="modal-header">
+        <h2 id="classroomModalTitle">Classroom Schedule</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeClassroomModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body" style="padding:0;">
+        <div id="classroomModalCalendar" class="week-view" style="height: 500px;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Event Detail Modal -->
+  <div class="modal-overlay" id="eventDetailModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="eventDetailTitle">
+      <header class="modal-header">
+        <h2 id="eventDetailTitle">Lesson Details</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeEventModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </header>
+      <div class="modal-body" id="eventDetailBody"></div>
+      <div class="modal-actions" style="justify-content:space-between">
+        <div>
+          <button class="btn btn-ghost" id="requestCoverBtn" style="color:var(--brand-600); display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4"/><path d="M21 11.8v2a4 4 0 0 1-4 4H4.2"/></svg>
+            Request Cover
+          </button>
+          <button class="btn btn-ghost" id="declineClassBtn" style="color:var(--danger); display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            Decline Class
+          </button>
+          <button class="btn btn-ghost" id="cancelEventBtn" style="color:var(--warning); display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            Cancel Lesson
+          </button>
+          <button class="btn btn-ghost" id="editEventBtn" style="color:var(--brand-600); display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            Edit
+          </button>
+          <button class="btn btn-ghost" id="deleteEventBtn" style="color:var(--danger)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            Delete
+          </button>
+        </div>
+        <button class="btn btn-primary" id="closeEventModalBtn">Close</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Trainer Login Modal -->
+  <div class="modal-overlay" id="trainerLoginModal" style="z-index: 999999;">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="trainerLoginTitle" style="max-width:400px;">
+      <header class="modal-header">
+        <h2 id="trainerLoginTitle">Trainer Login</h2>
+      </header>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; color:var(--gray-500); font-size:14px;">Select a trainer profile to view as:</p>
+        <select id="trainerLoginSelect" style="width:100%; margin-bottom: 16px;">
+          <!-- Populated dynamically -->
+        </select>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="trainerLoginPasswordLabel">Password</span>
+            <a href="#" id="trainerForgotPasswordBtn" style="color:var(--brand-600); font-size:11px; text-decoration:none;">Forgot Password?</a>
+          </label>
+          <input type="password" id="trainerLoginPassword" placeholder="Enter password (123)" />
+          <div id="trainerLoginError" style="color:var(--danger); font-size:12px; margin-top:4px; display:none;">Incorrect password.</div>
+        </div>
+        <div class="form-group" id="trainerLoginConfirmGroup" style="margin-bottom: 24px; display:none;">
+          <label>Confirm Password</label>
+          <input type="password" id="trainerLoginConfirmPassword" placeholder="Re-enter password" />
+        </div>
+        <div class="modal-actions" style="justify-content:flex-end">
+          <button class="btn btn-ghost" id="cancelTrainerLoginBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmTrainerLoginBtn">Login</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Request Cover Modal -->
+  <div class="modal-overlay" id="requestCoverModal">
+    <section class="modal" aria-modal="true" role="dialog" aria-labelledby="requestCoverTitle" style="max-width:400px;">
+      <header class="modal-header">
+        <h2 id="requestCoverTitle">Request Cover</h2>
+      </header>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; color:var(--gray-500); font-size:14px;">Select who you would like to request to cover this lesson:</p>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label for="coverRequestSelect">Covering Trainer</label>
+          <select id="coverRequestSelect" style="width:100%;">
+            <option value="all">Broadcast to all trainers</option>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-end">
+          <button class="btn btn-ghost" id="cancelCoverBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmCoverBtn">Request</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Conflict Detail Modal -->
+  <div class="modal-overlay" id="conflictModal">
+    <div class="modal modal-sm" role="dialog" aria-labelledby="conflictModalTitle">
+      <header class="modal-header">
+        <h2 id="conflictModalTitle">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" style="margin-right:6px;vertical-align:middle">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          Scheduling Conflicts
+        </h2>
+        <button class="modal-close" aria-label="Close modal" id="closeConflictModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body" id="conflictModalBody"></div>
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" id="closeConflictModalBtn">Go Back</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Drag drop confirm modal -->
+  <div class="modal-overlay" id="dragConfirmModal">
+    <div class="modal modal-sm" role="dialog">
+      <header class="modal-header">
+        <h2>Confirm Reschedule</h2>
+        <button class="modal-close" aria-label="Close modal" id="closeDragModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body" id="dragConfirmBody"></div>
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" id="cancelDragBtn">Cancel</button>
+        <button class="btn btn-primary" id="confirmDragBtn">Confirm Reschedule</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Import Schedule Modal -->
+  <div class="modal-overlay" id="importScheduleModal">
+    <section class="modal" aria-modal="true" role="dialog" style="max-width: 400px;">
+      <header class="modal-header">
+        <h3 class="modal-title">Import Outlook Calendar</h3>
+
+        <button class="modal-close" aria-label="Close modal" id="closeImportScheduleModal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </header>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; color:var(--gray-500); font-size:14px;">Upload an ICS file to sync events.</p>
+        <input type="file" id="importFileInput" accept=".ics" />
+      </div>
+      <footer class="modal-footer">
+        <button class="btn btn-ghost" id="cancelImportBtn">Cancel</button>
+        <button class="btn btn-primary" id="confirmImportBtn">Import</button>
+      </footer>
+    </section>
+  </div>
+  
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script type="module" src="/scripts/main.js"></script>
+</body>
+</html>
