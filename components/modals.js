@@ -136,8 +136,8 @@ const cancelEvent = () => {
 
   // Re-render current view
   const renderers = {
-    dashboard: renderDashboard, calendar: renderCalendar,
-    batches: renderBatches, trainers: renderTrainers, trainerPortal: renderTrainerPortal
+    dashboard: () => window.renderDashboard(), calendar: () => window.renderCalendar(),
+    batches: () => window.renderBatches(), trainers: () => window.renderTrainers(), trainerPortal: () => window.renderTrainerPortal()
   };
   if (renderers[AppState.activeView]) renderers[AppState.activeView]();
 };
@@ -201,8 +201,8 @@ const deleteEvent = () => {
 
   // Re-render current view
   const renderers = {
-    dashboard: renderDashboard, calendar: renderCalendar,
-    batches: renderBatches, trainers: renderTrainers, trainerPortal: renderTrainerPortal
+    dashboard: () => window.renderDashboard(), calendar: () => window.renderCalendar(),
+    batches: () => window.renderBatches(), trainers: () => window.renderTrainers(), trainerPortal: () => window.renderTrainerPortal()
   };
   if (renderers[AppState.activeView]) renderers[AppState.activeView]();
 };

@@ -35,20 +35,22 @@ const switchView = (viewId) => {
   document.getElementById('breadcrumb').textContent = labels[viewId] || viewId;
 
   // Render view-specific content
+  // Functions are looked up via window.* to ensure they are resolved at
+  // call time (not bundle-parse time), avoiding load-order ReferenceErrors.
   const renderers = {
-    dashboard:  renderDashboard,
-    calendar:   renderCalendar,
-    schedule:   renderScheduleForm,
-    batches:    renderBatches,
-    admins:     renderAdmins,
-    trainers:   renderTrainers,
-    classrooms: renderClassrooms,
-    lessons:    renderLessons,
-    matrix:     renderMatrix,
-    assistant:  renderAssistant,
-    'trainer-dashboard': renderTrainerPortal,
-    'trainer-schedule':  renderTrainerPortal,
-    'trainer-understudy': renderTrainerPortal,
+    dashboard:            () => window.renderDashboard(),
+    calendar:             () => window.renderCalendar(),
+    schedule:             () => window.renderScheduleForm(),
+    batches:              () => window.renderBatches(),
+    admins:               () => window.renderAdmins(),
+    trainers:             () => window.renderTrainers(),
+    classrooms:           () => window.renderClassrooms(),
+    lessons:              () => window.renderLessons(),
+    matrix:               () => window.renderMatrix(),
+    assistant:            () => window.renderAssistant(),
+    'trainer-dashboard':  () => window.renderTrainerPortal(),
+    'trainer-schedule':   () => window.renderTrainerPortal(),
+    'trainer-understudy': () => window.renderTrainerPortal(),
   };
   if (renderers[viewId]) renderers[viewId]();
 };
