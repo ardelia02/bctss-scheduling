@@ -74,6 +74,31 @@ const AppState = {
   editingEventId: null,
 };
 
+/* ================================================================
+   3. PERSISTENCE — save/load state to localStorage
+   ================================================================ */
+function saveState() {
+  try {
+    const jsonState = JSON.stringify({
+      admins:           AppState.admins,
+      classrooms:       AppState.classrooms,
+      trainers:         AppState.trainers,
+      topics:           AppState.topics,
+      lessons:          AppState.lessons,
+      authMatrix:       AppState.authMatrix,
+      batches:          AppState.batches,
+      events:           AppState.events,
+      unavailabilities: AppState.unavailabilities || []
+    });
+    localStorage.setItem('bctss_schedule_state', encodeBase64(jsonState));
+  } catch (err) {
+    if (typeof showToast === 'function') {
+      showToast('Failed to save data. Storage quota exceeded.', 'danger');
+    }
+  }
+}
+window.saveState = saveState;
+
 // Data Migration: Ensure all lessons have topicId and prerequisiteIds
 AppState.lessons.forEach(l => {
   if (!l.topicId) l.topicId = 'top1'; // Default to General
@@ -93,7 +118,7 @@ AppState.events.forEach(ev => {
 
 
 // --- Auto-generated globals for Vite migration ---
-window.savedState = savedState;
-window.AppState = AppState;
-window.loadState = loadState;
-window.SEED_DATA = SEED_DATA;
+window.savedState  = savedState;
+window.AppState    = AppState;
+window.loadState   = loadState;
+window.SEED_DATA   = SEED_DATA;

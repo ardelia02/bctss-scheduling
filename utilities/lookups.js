@@ -22,26 +22,7 @@ const getEventDisplayName = (ev, lesson) => {
   return name;
 };
 
-function saveState() {
-  try {
-    const jsonState = JSON.stringify({
-      admins: AppState.admins,
-      classrooms: AppState.classrooms,
-      trainers: AppState.trainers,
-      topics: AppState.topics,
-      lessons: AppState.lessons,
-      authMatrix: AppState.authMatrix,
-      batches: AppState.batches,
-      events: AppState.events,
-      unavailabilities: AppState.unavailabilities || []
-    });
-    localStorage.setItem('bctss_schedule_state', encodeBase64(jsonState));
-  } catch (err) {
-    if (typeof showToast === 'function') {
-      showToast('Failed to save data. Storage quota exceeded.', 'danger');
-    }
-  }
-};
+
 
 const authorisedTrainers = (lessonId) =>
   (AppState.authMatrix[lessonId] || []).map(tid => getTrainer(tid)).filter(t => t.id);
@@ -53,7 +34,7 @@ window.getLesson = getLesson;
 window.getTrainer = getTrainer;
 window.getEventDisplayName = getEventDisplayName;
 window.authorisedTrainers = authorisedTrainers;
-window.saveState = saveState;
+window.saveState          = window.saveState; // defined in state.js
 window.getClassroom = getClassroom;
 window.getEventTrainersText = getEventTrainersText;
 window.getBatch = getBatch;
