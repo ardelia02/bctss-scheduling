@@ -398,11 +398,10 @@ const initEventListeners = () => {
   });
 
   // Edit Trainer button delegation
-  let currentImportTrainerId = null;
   document.getElementById('trainersGrid').addEventListener('click', (e) => {
     const importBtn = e.target.closest('.import-trainer-btn');
     if (importBtn) {
-      currentImportTrainerId = importBtn.dataset.tid;
+      AppState.currentImportTrainerId = importBtn.dataset.tid;
       window.openModal('importScheduleModal');
       return;
     }
@@ -751,16 +750,16 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
   document.getElementById('cancelEventBtn').addEventListener('click', cancelEvent);
   document.getElementById('deleteEventBtn').addEventListener('click', deleteEvent);
   document.getElementById('editEventBtn').addEventListener('click', () => {
-    if (currentDetailEventId) editEvent(currentDetailEventId);
+    if (AppState.currentDetailEventId) editEvent(AppState.currentDetailEventId);
   });
 
   // Decline Class (trainer only)
   const declineClassBtn = document.getElementById('declineClassBtn');
   if (declineClassBtn) {
     declineClassBtn.addEventListener('click', () => {
-      if (!currentDetailEventId) return;
+      if (!AppState.currentDetailEventId) return;
       if (confirm('Are you sure you want to decline this class? The admin will be notified to reassign.')) {
-        declineClass(currentDetailEventId);
+        declineClass(AppState.currentDetailEventId);
       }
     });
   }
@@ -786,8 +785,8 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
 
   // Request Cover Workflow
   document.getElementById('requestCoverBtn').addEventListener('click', () => {
-    if (!currentDetailEventId) return;
-    const ev = AppState.events.find(e => e.id === currentDetailEventId);
+    if (!AppState.currentDetailEventId) return;
+    const ev = AppState.events.find(e => e.id === AppState.currentDetailEventId);
     if (!ev) return;
     
     const select = document.getElementById('coverRequestSelect');
@@ -809,8 +808,8 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
   });
   
   document.getElementById('confirmCoverBtn').addEventListener('click', () => {
-    if (!currentDetailEventId) return;
-    const ev = AppState.events.find(e => e.id === currentDetailEventId);
+    if (!AppState.currentDetailEventId) return;
+    const ev = AppState.events.find(e => e.id === AppState.currentDetailEventId);
     if (ev) {
       ev.coverRequested = true;
       ev.coverRequestedBy = AppState.currentTrainerId || ev.trainerIds[0];
