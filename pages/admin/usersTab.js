@@ -279,3 +279,8 @@ const saveTrainer = (e) => {
 
 
 window.renderTrainers = renderTrainers;
+
+window.buildTrainerCoursesDropdown = buildTrainerCoursesDropdown;
+window.saveAdmin = saveAdmin;
+window.saveTrainer = saveTrainer;
+window.updateTrainerCoursesLabel = updateTrainerCoursesLabel;

@@ -8,3 +8,5 @@ const updateTopbarDate = () => {
   });
 };
 
+
+window.updateTopbarDate = updateTopbarDate;

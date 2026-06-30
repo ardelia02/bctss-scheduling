@@ -219,3 +219,10 @@ const saveLesson = (e) => {
 
 
 window.renderLessons = renderLessons;
+
+window.buildLessonPrerequisiteDropdown = buildLessonPrerequisiteDropdown;
+window.buildLessonTrainerDropdown = buildLessonTrainerDropdown;
+window.saveClassroom = saveClassroom;
+window.saveLesson = saveLesson;
+window.saveTopic = saveTopic;
+window.updateLessonPrerequisiteLabel = updateLessonPrerequisiteLabel;
