@@ -860,3 +860,4 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
   });
 };
 
+window.initEventListeners = initEventListeners;

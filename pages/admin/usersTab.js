@@ -278,3 +278,4 @@ const saveTrainer = (e) => {
 };
 
 
+window.renderTrainers = renderTrainers;

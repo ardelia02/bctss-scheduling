@@ -415,3 +415,9 @@ const renderDayCalendar = (anchor) => {
   // Auto-scroll to 8 AM (null-checked)
   setTimeout(() => { if (body) body.scrollTop = (8 - START_H) * HOUR_H - 16; }, 30);
 };
+
+// --- Window exports for Vite bundle compatibility ---
+window.renderCalendar      = renderCalendar;
+window.renderMonthCalendar = renderMonthCalendar;
+window.renderWeekCalendar  = renderWeekCalendar;
+window.buildTimeGridAndEvents = buildTimeGridAndEvents;

@@ -118,9 +118,6 @@ window.exportBatchScheduleCSV = (batchId) => {
 
 
 // --- Auto-generated globals for Vite migration ---
-window.renderCalendar = renderCalendar;
-window.renderMonthCalendar = renderMonthCalendar;
-window.renderWeekCalendar = renderWeekCalendar;
 window.buildTimeGridAndEvents = buildTimeGridAndEvents;
 window.renderBatchSchedulePanel = renderBatchSchedulePanel;
 window.createDayCell = createDayCell;

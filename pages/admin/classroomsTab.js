@@ -329,3 +329,4 @@ window.navClassroomModalCalendar = (dir) => {
   }
 };
 
+window.renderClassrooms = renderClassrooms;

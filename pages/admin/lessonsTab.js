@@ -218,3 +218,4 @@ const saveLesson = (e) => {
 };
 
 
+window.renderLessons = renderLessons;
