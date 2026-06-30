@@ -72,6 +72,11 @@ const AppState = {
 
   // Edit state
   editingEventId: null,
+
+  // Modal state — centralised here so all files can read/write without cross-file let bindings
+  currentDetailEventId:   null,
+  currentModalClassroomId: null,
+  currentImportTrainerId:  null,
 };
 
 /* ================================================================
