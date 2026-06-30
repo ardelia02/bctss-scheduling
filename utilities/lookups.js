@@ -37,7 +37,6 @@ function saveState() {
     });
     localStorage.setItem('bctss_schedule_state', encodeBase64(jsonState));
   } catch (err) {
-    if (import.meta.env.DEV) console.error('Failed to save state to localStorage:', err);
     if (typeof showToast === 'function') {
       showToast('Failed to save data. Storage quota exceeded.', 'danger');
     }
@@ -45,4 +44,16 @@ function saveState() {
 };
 
 const authorisedTrainers = (lessonId) =>
-  (AppState.authMatrix[lessonId] || []).map(tid => getTrainer(ti
+  (AppState.authMatrix[lessonId] || []).map(tid => getTrainer(tid)).filter(t => t.id);
+
+
+
+// --- Auto-generated globals for Vite migration ---
+window.getLesson = getLesson;
+window.getTrainer = getTrainer;
+window.getEventDisplayName = getEventDisplayName;
+window.authorisedTrainers = authorisedTrainers;
+window.saveState = saveState;
+window.getClassroom = getClassroom;
+window.getEventTrainersText = getEventTrainersText;
+window.getBatch = getBatch;

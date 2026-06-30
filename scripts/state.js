@@ -32,7 +32,6 @@ const loadState = () => {
       
       return parsed;
     } catch (e) {
-      if (import.meta.env.DEV) console.error('Failed to parse or validate local storage. Falling back to SEED_DATA.', e);
       // Optionally notify user
       if (typeof showToast === 'function') {
         setTimeout(() => showToast('Local storage corrupted. Default data loaded.', 'danger'), 1000);

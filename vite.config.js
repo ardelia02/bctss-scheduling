@@ -6,6 +6,6 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    minify: 'terser',
+    minify: 'esbuild', // esbuild is built into Vite — no extra install needed
   },
 });

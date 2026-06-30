@@ -4,7 +4,6 @@
 const openModal  = (id) => {
   const m = document.getElementById(id);
   if (m) m.classList.add('open');
-  else if (import.meta.env.DEV) console.warn(`Modal ${id} not found.`);
 };
 const closeModal = (id) => {
   const m = document.getElementById(id);

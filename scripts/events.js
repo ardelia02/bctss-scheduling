@@ -590,7 +590,6 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
       sel.innerHTML = '<option value="">— Select your profile —</option>' + 
         trainers.map(t => `<option value="${t.id}">${escapeHTML(t.name)}</option>`).join('');
     } catch (err) {
-      if (import.meta.env.DEV) console.error('Error populating trainer dropdown:', err);
     }
     document.getElementById('trainerLoginPassword').value = '';
     document.getElementById('trainerLoginError').style.display = 'none';
