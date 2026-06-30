@@ -14,3 +14,4 @@ const navigateCalendar = (direction) => {
   window.renderCalendar();
 };
 
+window.navigateCalendar = navigateCalendar;

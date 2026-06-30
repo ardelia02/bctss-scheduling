@@ -10,7 +10,6 @@ import "../utilities/formatters.js";
 import "../utilities/lookups.js";
 import "./notifications.js";
 import "../components/calendar.js";
-import "../components/batchSchedulePanel.js";
 import "../pages/dashboard.js";
 import "../pages/admin/usersTab.js";
 import "../pages/admin/classroomsTab.js";
