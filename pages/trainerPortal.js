@@ -234,7 +234,7 @@ const renderTrainerPortal = () => {
       isUnavailability: true
     }));
 
-  renderReusableWeekGrid('trainerScheduleGrid', anchor, [...trainerEvents, ...unavailEvents]);
+  window.renderReusableWeekGrid('trainerScheduleGrid', anchor, [...trainerEvents, ...unavailEvents]);
 };
 
 /** Save a new unavailability entry */
@@ -249,7 +249,7 @@ const saveUnavailability = async (e) => {
   const reason  = document.getElementById('unavailReason').value.trim() || type.toUpperCase();
 
   if (!date || !start || !end) {
-    showToast('Please fill in Date, Start Time, and End Time.', 'warning');
+    window.showToast('Please fill in Date, Start Time, and End Time.', 'warning');
     return;
   }
 
@@ -265,7 +265,7 @@ const saveUnavailability = async (e) => {
     const endD   = endDate ? safeDate(endDate) : safeDate(date);
     
     if (endD < startD) {
-      showToast('End Date cannot be before Start Date.', 'warning');
+      window.showToast('End Date cannot be before Start Date.', 'warning');
       return;
     }
 
@@ -284,9 +284,9 @@ const saveUnavailability = async (e) => {
     }
   }
 
-  saveState();
-  closeModal('unavailabilityModal');
-  showToast('Calendar updated!', 'success');
+  window.saveState();
+  window.closeModal('unavailabilityModal');
+  window.showToast('Calendar updated!', 'success');
   renderTrainerPortal();
 };
 
@@ -294,8 +294,8 @@ const saveUnavailability = async (e) => {
 const deleteUnavailability = (id) => {
   if (!AppState.unavailabilities) return;
   AppState.unavailabilities = AppState.unavailabilities.filter(u => u.id !== id);
-  saveState();
-  showToast('Removed.', 'success');
+  window.saveState();
+  window.showToast('Removed.', 'success');
   renderTrainerPortal();
 };
 
@@ -318,8 +318,8 @@ const acceptCoverRequest = (eventId) => {
   ev.coverRequestedBy = null;
   ev.coverRequestedTo = null;
   
-  saveState();
-  showToast('Cover request accepted!', 'success');
+  window.saveState();
+  window.showToast('Cover request accepted!', 'success');
   renderTrainerPortal();
 };
 
@@ -334,8 +334,8 @@ const rejectCoverRequest = (eventId) => {
   ev.coverRejectedBy = AppState.currentTrainerId;
   ev.coverRejected = true;
 
-  saveState();
-  showToast('Cover request rejected. The original trainer has been notified.', 'warning');
+  window.saveState();
+  window.showToast('Cover request rejected. The original trainer has been notified.', 'warning');
   renderTrainerPortal();
 };
 
@@ -349,9 +349,9 @@ const declineClass = (eventId) => {
   ev.trainerIds = ev.trainerIds.filter(id => id !== tid);
   ev.unallocated = true; // flag for admin dashboard
 
-  saveState();
-  closeModal('eventDetailModal');
-  showToast('You have declined this class. The admin will be notified to reallocate.', 'warning');
+  window.saveState();
+  window.closeModal('eventDetailModal');
+  window.showToast('You have declined this class. The admin will be notified to reallocate.', 'warning');
   renderTrainerPortal();
 };
 

@@ -22,10 +22,10 @@ const showEventDetail = (eventId) => {
         const delBtn = document.getElementById('deleteUnavailabilityBtn');
         if (delBtn) {
           delBtn.style.display = 'inline-flex';
-          delBtn.onclick = () => { deleteUnavailability(unavail.id); closeModal('unavailabilityModal'); };
+          delBtn.onclick = () => { deleteUnavailability(unavail.id); window.closeModal('unavailabilityModal'); };
         }
         
-        openModal('unavailabilityModal');
+        window.openModal('unavailabilityModal');
       }
       return;
     }
@@ -122,7 +122,7 @@ const showEventDetail = (eventId) => {
     }
   }
   
-  openModal('eventDetailModal');
+  window.openModal('eventDetailModal');
 };
 
 const cancelEvent = () => {
@@ -131,8 +131,8 @@ const cancelEvent = () => {
   if (ev) {
     ev.status = 'cancelled';
   }
-  closeModal('eventDetailModal');
-  showToast('Lesson cancelled.', 'warning');
+  window.closeModal('eventDetailModal');
+  window.showToast('Lesson cancelled.', 'warning');
 
   // Re-render current view
   const renderers = {
@@ -146,10 +146,10 @@ const editEvent = (eventId) => {
   const ev = AppState.events.find(e => e.id === eventId);
   if (!ev) return;
   
-  closeModal('eventDetailModal');
+  window.closeModal('eventDetailModal');
   
   AppState.editingEventId = ev.id;
-  switchView('schedule');
+  window.switchView('schedule');
   
   document.querySelectorAll('#batchSelectDropdown input[type="checkbox"]').forEach(cb => {
     cb.checked = (ev.batchIds || []).includes(cb.value);
@@ -196,8 +196,8 @@ const editEvent = (eventId) => {
 const deleteEvent = () => {
   if (!currentDetailEventId) return;
   AppState.events = AppState.events.filter(e => e.id !== currentDetailEventId);
-  closeModal('eventDetailModal');
-  showToast('Lesson deleted.', 'success');
+  window.closeModal('eventDetailModal');
+  window.showToast('Lesson deleted.', 'success');
 
   // Re-render current view
   const renderers = {

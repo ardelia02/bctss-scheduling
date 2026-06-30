@@ -77,11 +77,11 @@ const init = () => {
       isCovering: false
     });
     
-    closeModal('importScheduleModal');
+    window.closeModal('importScheduleModal');
     fileInput.value = '';
-    showToast('Calendar imported successfully!', 'success');
-    renderTrainers();
-    if (AppState.activeView === 'calendar') renderCalendar();
+    window.showToast('Calendar imported successfully!', 'success');
+    window.renderTrainers();
+    if (AppState.activeView === 'calendar') window.renderCalendar();
   });
 };
 

@@ -33,9 +33,9 @@ const renderCalendar = () => {
 
     if (isMonth) renderMonthCalendar(calendarDate);
     else if (isWeek) renderWeekCalendar(calendarDate);
-    else renderDayCalendar(calendarDate);
+    else window.renderDayCalendar(calendarDate);
 
-    renderBatchSchedulePanel();
+    window.renderBatchSchedulePanel();
   } catch (err) {
     document.getElementById('mainContent').innerHTML = `<div style="padding:40px; color:red;"><h3>Calendar Render Error:</h3><pre>${escapeHTML(err.stack)}</pre></div>`;
   }

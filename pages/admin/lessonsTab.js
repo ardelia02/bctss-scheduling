@@ -96,11 +96,11 @@ const saveClassroom = (e) => {
   const pax = parseInt(document.getElementById('classroomPax').value, 10) || 0;
   
   if (!name) {
-    showToast('Please enter a classroom name.', 'warning');
+    window.showToast('Please enter a classroom name.', 'warning');
     return;
   }
   if (pax <= 0) {
-    showToast('Classroom capacity must be greater than 0.', 'warning');
+    window.showToast('Classroom capacity must be greater than 0.', 'warning');
     return;
   }
   
@@ -111,16 +111,16 @@ const saveClassroom = (e) => {
       c.type = type;
       c.pax = pax;
       c.capacity = pax;
-      showToast(`Classroom "${name}" updated!`, 'success');
+      window.showToast(`Classroom "${name}" updated!`, 'success');
     }
   } else {
     const newId = `cr${uid()}`;
     AppState.classrooms.push({ id: newId, name, type, pax, capacity: pax });
-    showToast(`Classroom "${name}" added!`, 'success');
+    window.showToast(`Classroom "${name}" added!`, 'success');
   }
   
-  closeModal('classroomAddModal');
-  renderClassrooms();
+  window.closeModal('classroomAddModal');
+  window.renderClassrooms();
   
   // Re-build any classroom dropdowns if needed
   const crCheckboxes = document.getElementById('classroomCheckboxes');
@@ -159,7 +159,7 @@ const saveTopic = (e) => {
   e.preventDefault();
   const id = document.getElementById('topicId').value;
   const name = document.getElementById('topicName').value.trim();
-  if (!name) return showToast('Please enter a topic name', 'warning');
+  if (!name) return window.showToast('Please enter a topic name', 'warning');
   
   if (id) {
     const t = AppState.topics.find(x => x.id === id);
@@ -167,10 +167,10 @@ const saveTopic = (e) => {
   } else {
     AppState.topics.push({ id: `top${uid()}`, name });
   }
-  closeModal('topicModal');
-  saveState();
+  window.closeModal('topicModal');
+  window.saveState();
   renderLessons();
-  showToast('Topic saved!', 'success');
+  window.showToast('Topic saved!', 'success');
 };
 
 const saveLesson = (e) => {
@@ -185,11 +185,11 @@ const saveLesson = (e) => {
   const authorisedTrainerIds = [...document.querySelectorAll('input[name="lessonTrainerIds"]:checked')].map(el => el.value);
 
   if (!name || isNaN(duration) || !topicId) {
-    showToast('Please fill in all required fields (Topic, Name, Duration).', 'warning');
+    window.showToast('Please fill in all required fields (Topic, Name, Duration).', 'warning');
     return;
   }
   if (duration <= 0) {
-    showToast('Duration must be greater than 0.', 'warning');
+    window.showToast('Duration must be greater than 0.', 'warning');
     return;
   }
 
@@ -203,17 +203,17 @@ const saveLesson = (e) => {
       delete l.durationHours; // ensure old durationHours doesn't override durationMins
       l.prerequisiteIds = prerequisiteIds;
       l.remarks = remarks || '';
-      showToast(`Module "${name}" updated!`, 'success');
+      window.showToast(`Module "${name}" updated!`, 'success');
     }
   } else {
     lessonId = `ls${uid()}`;
     AppState.lessons.push({ id: lessonId, topicId, name, durationMins: duration, prerequisiteIds: prerequisiteIds, remarks: remarks || '' });
-    showToast(`Module "${name}" created!`, 'success');
+    window.showToast(`Module "${name}" created!`, 'success');
   }
 
   AppState.authMatrix[lessonId] = authorisedTrainerIds;
   
-  closeModal('lessonModal');
+  window.closeModal('lessonModal');
   renderLessons();
 };
 

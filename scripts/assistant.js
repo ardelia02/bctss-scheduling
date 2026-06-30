@@ -39,7 +39,7 @@ const runAssistant = () => {
   const duration = parseFloat(document.getElementById('assistDuration').value) || 3;
 
   if (!lessonId || !date) {
-    showToast('Please select a lesson and date first.', 'warning');
+    window.showToast('Please select a lesson and date first.', 'warning');
     return;
   }
 
@@ -295,7 +295,7 @@ const updateFormAssistant = () => {
     if (dateStr) {
       dayViewContainer.style.display = 'block';
       const filteredEvents = batchIds.length > 0 ? AppState.events.filter(e => batchIds.some(bid => (e.batchIds || []).includes(bid))) : AppState.events;
-      renderReusableWeekGrid('scheduleDayViewContainer', safeDate(dateStr), filteredEvents, null, 1);
+      window.renderReusableWeekGrid('scheduleDayViewContainer', safeDate(dateStr), filteredEvents, null, 1);
     } else {
       dayViewContainer.style.display = 'none';
       dayViewContainer.innerHTML = '';

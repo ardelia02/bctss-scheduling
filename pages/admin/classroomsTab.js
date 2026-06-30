@@ -296,9 +296,9 @@ const showClassroomSchedule = (crid) => {
   `;
   
   const events = AppState.events.filter(e => (e.classroomIds || []).includes(crid));
-  renderReusableWeekGrid('classroomModalCalendar', anchor, events, (dateStr, startStr, endStr) => {
-    closeModal('classroomScheduleModal');
-    switchView('schedule');
+  window.renderReusableWeekGrid('classroomModalCalendar', anchor, events, (dateStr, startStr, endStr) => {
+    window.closeModal('classroomScheduleModal');
+    window.switchView('schedule');
     setTimeout(() => {
       const formDate = document.getElementById('formDate');
       if (formDate) {
@@ -311,7 +311,7 @@ const showClassroomSchedule = (crid) => {
       }
     }, 50);
   });
-  openModal('classroomScheduleModal');
+  window.openModal('classroomScheduleModal');
 };
 
 window.navClassroomModalCalendar = (dir) => {
@@ -325,7 +325,7 @@ window.navClassroomModalCalendar = (dir) => {
   
   // Keep the main calendar in sync visually
   if (AppState.activeView === 'calendar') {
-    renderCalendar();
+    window.renderCalendar();
   }
 };
 

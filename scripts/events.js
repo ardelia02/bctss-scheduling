@@ -11,10 +11,10 @@ const initEventListeners = () => {
       if (view === 'classrooms') {
         AppState.classroomsAnchor = new Date(); // Reset to current week
         if (AppState.activeView === 'classrooms') {
-          renderClassrooms(); // re-render if already there
+          window.renderClassrooms(); // re-render if already there
         }
       }
-      switchView(view);
+      window.switchView(view);
     });
   });
 
@@ -33,7 +33,7 @@ const initEventListeners = () => {
 
   // Quick schedule button (topbar)
   document.getElementById('quickScheduleBtn').addEventListener('click', () => {
-    switchView('schedule');
+    window.switchView('schedule');
   });
 
   // Calendar navigation
@@ -41,7 +41,7 @@ const initEventListeners = () => {
   document.getElementById('calNextBtn').addEventListener('click', () => navigateCalendar(+1));
   document.getElementById('calTodayBtn').addEventListener('click', () => {
     AppState.calendarDate = new Date();
-    renderCalendar();
+    window.renderCalendar();
   });
 
   // Calendar view toggle (month/week/day)
@@ -50,28 +50,28 @@ const initEventListeners = () => {
     document.getElementById('calMonthBtn').classList.add('active');
     document.getElementById('calWeekBtn').classList.remove('active');
     document.getElementById('calDayBtn').classList.remove('active');
-    renderCalendar();
+    window.renderCalendar();
   });
   document.getElementById('calWeekBtn').addEventListener('click', () => {
     AppState.calendarView = 'week';
     document.getElementById('calWeekBtn').classList.add('active');
     document.getElementById('calMonthBtn').classList.remove('active');
     document.getElementById('calDayBtn').classList.remove('active');
-    renderCalendar();
+    window.renderCalendar();
   });
   document.getElementById('calDayBtn').addEventListener('click', () => {
     AppState.calendarView = 'day';
     document.getElementById('calDayBtn').classList.add('active');
     document.getElementById('calMonthBtn').classList.remove('active');
     document.getElementById('calWeekBtn').classList.remove('active');
-    renderCalendar();
+    window.renderCalendar();
   });
 
   // Batch filter – calendar view
   document.getElementById('calBatchFilter').addEventListener('change', (e) => {
     if (isUpdatingFilter) return;  // ignore programmatic updates
     AppState.selectedBatch = e.target.value;
-    renderCalendar();
+    window.renderCalendar();
   });
 
   // Batch schedule panel – "View" buttons (event delegation)
@@ -96,7 +96,7 @@ const initEventListeners = () => {
       document.getElementById('calDayBtn').classList.add('active');
       document.getElementById('calMonthBtn').classList.remove('active');
       document.getElementById('calWeekBtn').classList.remove('active');
-      renderCalendar();
+      window.renderCalendar();
     }
   });
 
@@ -111,7 +111,7 @@ const initEventListeners = () => {
     if (cell) {
       const date = cell.dataset.date;
       const hour = cell.dataset.hour;
-      switchView('schedule');
+      window.switchView('schedule');
       setTimeout(() => {
         const formDate = document.getElementById('formDate');
         if (formDate) {
@@ -172,12 +172,12 @@ const initEventListeners = () => {
   // Classroom Search
   document.getElementById('classroomSearchBtn').addEventListener('click', () => {
     if (document.getElementById('classroomSearchDate').value) {
-      renderClassrooms();
+      window.renderClassrooms();
     }
   });
   document.getElementById('classroomSearchClearBtn').addEventListener('click', () => {
     document.getElementById('classroomSearchDate').value = '';
-    renderClassrooms();
+    window.renderClassrooms();
   });
 
   // Schedule form submit
@@ -186,7 +186,7 @@ const initEventListeners = () => {
   // Batch status filter
   document.getElementById('batchStatusFilter').addEventListener('change', (e) => {
     AppState.batchStatusFilter = e.target.value;
-    renderBatches();
+    window.renderBatches();
   });
 
   // Edit Batch button delegation
@@ -207,7 +207,7 @@ const initEventListeners = () => {
         buildBatchMentorDropdown(b.mentorIds || []);
         buildHomeroomDropdown(b.homeroom || '');
         renderBatchColorGrid(selectedCol);
-        openModal('batchModal');
+        window.openModal('batchModal');
       }
     }
   });
@@ -223,7 +223,7 @@ const initEventListeners = () => {
     buildBatchMentorDropdown([]);
     buildHomeroomDropdown('');
     renderBatchColorGrid(newCol);
-    openModal('batchModal');
+    window.openModal('batchModal');
   });
 
   // Lessons Grid (Edit Lesson)
@@ -237,7 +237,7 @@ const initEventListeners = () => {
           document.getElementById('topicId').value = topic.id;
           document.getElementById('topicName').value = topic.name;
           document.getElementById('topicModalTitle').textContent = 'Edit Topic';
-          openModal('topicModal');
+          window.openModal('topicModal');
         }
         return;
       }
@@ -259,7 +259,7 @@ const initEventListeners = () => {
           document.getElementById('lessonModalTitle').textContent = 'Edit Module';
           buildLessonPrerequisiteDropdown(lesson.id, lesson.prerequisiteIds || []);
           buildLessonTrainerDropdown(AppState.authMatrix[lesson.id] || []);
-          openModal('lessonModal');
+          window.openModal('lessonModal');
         }
       }
     });
@@ -272,7 +272,7 @@ const initEventListeners = () => {
       document.getElementById('classroomForm').reset();
       document.getElementById('classroomId').value = '';
       document.getElementById('classroomAddModalTitle').textContent = 'Add New Classroom';
-      openModal('classroomAddModal');
+      window.openModal('classroomAddModal');
     });
   }
 
@@ -283,9 +283,9 @@ const initEventListeners = () => {
   }
 
   const cancelClassroomBtn = document.getElementById('cancelClassroomBtn');
-  if (cancelClassroomBtn) cancelClassroomBtn.addEventListener('click', () => closeModal('classroomAddModal'));
+  if (cancelClassroomBtn) cancelClassroomBtn.addEventListener('click', () => window.closeModal('classroomAddModal'));
   const closeClassroomAddModal = document.getElementById('closeClassroomAddModal');
-  if (closeClassroomAddModal) closeClassroomAddModal.addEventListener('click', () => closeModal('classroomAddModal'));
+  if (closeClassroomAddModal) closeClassroomAddModal.addEventListener('click', () => window.closeModal('classroomAddModal'));
 
   // New Topic button
   const newTopicBtn = document.getElementById('newTopicBtn');
@@ -294,7 +294,7 @@ const initEventListeners = () => {
       document.getElementById('topicForm').reset();
       document.getElementById('topicId').value = '';
       document.getElementById('topicModalTitle').textContent = 'Add New Topic';
-      openModal('topicModal');
+      window.openModal('topicModal');
     });
   }
   
@@ -302,16 +302,16 @@ const initEventListeners = () => {
   if (topicForm) topicForm.addEventListener('submit', saveTopic);
   
   const cancelTopicBtn = document.getElementById('cancelTopicBtn');
-  if (cancelTopicBtn) cancelTopicBtn.addEventListener('click', () => closeModal('topicModal'));
+  if (cancelTopicBtn) cancelTopicBtn.addEventListener('click', () => window.closeModal('topicModal'));
   const closeTopicModal = document.getElementById('closeTopicModal');
-  if (closeTopicModal) closeTopicModal.addEventListener('click', () => closeModal('topicModal'));
+  if (closeTopicModal) closeTopicModal.addEventListener('click', () => window.closeModal('topicModal'));
 
   // New Module button
   const newLessonBtn = document.getElementById('newLessonBtn');
   if (newLessonBtn) {
     newLessonBtn.addEventListener('click', () => {
       if (!AppState.topics || AppState.topics.length === 0) {
-        showToast('Please create a Topic first!', 'warning');
+        window.showToast('Please create a Topic first!', 'warning');
         return;
       }
       document.getElementById('lessonForm').reset();
@@ -324,7 +324,7 @@ const initEventListeners = () => {
       document.getElementById('lessonModalTitle').textContent = 'Create New Module';
       buildLessonPrerequisiteDropdown(null, []);
       buildLessonTrainerDropdown([]);
-      openModal('lessonModal');
+      window.openModal('lessonModal');
     });
   }
 
@@ -335,10 +335,10 @@ const initEventListeners = () => {
   }
 
   const cancelLessonBtn = document.getElementById('cancelLessonBtn');
-  if (cancelLessonBtn) cancelLessonBtn.addEventListener('click', () => closeModal('lessonModal'));
+  if (cancelLessonBtn) cancelLessonBtn.addEventListener('click', () => window.closeModal('lessonModal'));
   
   const closeLessonModal = document.getElementById('closeLessonModal');
-  if (closeLessonModal) closeLessonModal.addEventListener('click', () => closeModal('lessonModal'));
+  if (closeLessonModal) closeLessonModal.addEventListener('click', () => window.closeModal('lessonModal'));
   
   // Custom Dropdown triggers for Lesson Modal
   const lessonTrainerTrigger = document.getElementById('lessonTrainerTrigger');
@@ -359,17 +359,17 @@ const initEventListeners = () => {
     document.getElementById('adminId').value = '';
     document.getElementById('adminPassword').placeholder = 'Required';
     document.getElementById('adminModalTitle').textContent = 'Add New Admin';
-    openModal('adminModal');
+    window.openModal('adminModal');
   });
   document.getElementById('adminForm').addEventListener('submit', saveAdmin);
-  document.getElementById('cancelAdminBtn').addEventListener('click', () => closeModal('adminModal'));
-  document.getElementById('closeAdminModal').addEventListener('click', () => closeModal('adminModal'));
+  document.getElementById('cancelAdminBtn').addEventListener('click', () => window.closeModal('adminModal'));
+  document.getElementById('closeAdminModal').addEventListener('click', () => window.closeModal('adminModal'));
 
   // Trainer Analytics Modal
   const cancelTrainerAnalyticsBtn = document.getElementById('cancelTrainerAnalyticsBtn');
-  if (cancelTrainerAnalyticsBtn) cancelTrainerAnalyticsBtn.addEventListener('click', () => closeModal('trainerAnalyticsModal'));
+  if (cancelTrainerAnalyticsBtn) cancelTrainerAnalyticsBtn.addEventListener('click', () => window.closeModal('trainerAnalyticsModal'));
   const closeTrainerAnalyticsModal = document.getElementById('closeTrainerAnalyticsModal');
-  if (closeTrainerAnalyticsModal) closeTrainerAnalyticsModal.addEventListener('click', () => closeModal('trainerAnalyticsModal'));
+  if (closeTrainerAnalyticsModal) closeTrainerAnalyticsModal.addEventListener('click', () => window.closeModal('trainerAnalyticsModal'));
 
   document.getElementById('adminsGrid').addEventListener('click', (e) => {
     const editBtn = e.target.closest('.edit-admin-btn');
@@ -381,7 +381,7 @@ const initEventListeners = () => {
         document.getElementById('adminPassword').value = '';
         document.getElementById('adminPassword').placeholder = 'Leave blank to keep unchanged';
         document.getElementById('adminModalTitle').textContent = 'Edit Admin';
-        openModal('adminModal');
+        window.openModal('adminModal');
       }
     }
   });
@@ -394,7 +394,7 @@ const initEventListeners = () => {
     document.getElementById('trainerModalTitle').textContent = 'Add New Trainer';
     document.getElementById('trainerRecordsSection').style.display = 'none';
     buildTrainerCoursesDropdown([]);
-    openModal('trainerModal');
+    window.openModal('trainerModal');
   });
 
   // Edit Trainer button delegation
@@ -403,7 +403,7 @@ const initEventListeners = () => {
     const importBtn = e.target.closest('.import-trainer-btn');
     if (importBtn) {
       currentImportTrainerId = importBtn.dataset.tid;
-      openModal('importScheduleModal');
+      window.openModal('importScheduleModal');
       return;
     }
   });
@@ -466,7 +466,7 @@ window.editTrainer = (trainerId, monthHrs, todayHtml, uData) => {
         }
         document.getElementById('trainerRecordsSection').style.display = 'block';
 
-        openModal('trainerModal');
+        window.openModal('trainerModal');
 };
 
 window.showTrainerLeaveRequests = (trainerId, uData) => {
@@ -491,25 +491,25 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
     }
   } catch(e) {}
   document.getElementById('trainerLeaveModalBody').innerHTML = uHtml;
-  openModal('trainerLeaveModal');
+  window.openModal('trainerLeaveModal');
 };
 
   // Trainer form submit
   document.getElementById('trainerForm').addEventListener('submit', saveTrainer);
 
   // Close modals
-  document.getElementById('closeTrainerModal').addEventListener('click', () => closeModal('trainerModal'));
-  document.getElementById('cancelTrainerBtn').addEventListener('click', () => closeModal('trainerModal'));
-  document.getElementById('closeBatchModal').addEventListener('click', () => closeModal('batchModal'));
-  document.getElementById('cancelBatchBtn').addEventListener('click', () => closeModal('batchModal'));
-  document.getElementById('closeEventModal').addEventListener('click', () => closeModal('eventDetailModal'));
-  document.getElementById('closeEventModalBtn').addEventListener('click', () => closeModal('eventDetailModal'));
-  document.getElementById('closeConflictModal').addEventListener('click', () => closeModal('conflictModal'));
-  document.getElementById('closeConflictModalBtn').addEventListener('click', () => closeModal('conflictModal'));
-  document.getElementById('closeDragModal').addEventListener('click', () => closeModal('dragConfirmModal'));
-  document.getElementById('cancelDragBtn').addEventListener('click', () => closeModal('dragConfirmModal'));
+  document.getElementById('closeTrainerModal').addEventListener('click', () => window.closeModal('trainerModal'));
+  document.getElementById('cancelTrainerBtn').addEventListener('click', () => window.closeModal('trainerModal'));
+  document.getElementById('closeBatchModal').addEventListener('click', () => window.closeModal('batchModal'));
+  document.getElementById('cancelBatchBtn').addEventListener('click', () => window.closeModal('batchModal'));
+  document.getElementById('closeEventModal').addEventListener('click', () => window.closeModal('eventDetailModal'));
+  document.getElementById('closeEventModalBtn').addEventListener('click', () => window.closeModal('eventDetailModal'));
+  document.getElementById('closeConflictModal').addEventListener('click', () => window.closeModal('conflictModal'));
+  document.getElementById('closeConflictModalBtn').addEventListener('click', () => window.closeModal('conflictModal'));
+  document.getElementById('closeDragModal').addEventListener('click', () => window.closeModal('dragConfirmModal'));
+  document.getElementById('cancelDragBtn').addEventListener('click', () => window.closeModal('dragConfirmModal'));
   document.getElementById('confirmDragBtn').addEventListener('click', confirmDrop);
-  document.getElementById('closeClassroomModal').addEventListener('click', () => closeModal('classroomScheduleModal'));
+  document.getElementById('closeClassroomModal').addEventListener('click', () => window.closeModal('classroomScheduleModal'));
 
   // Classroom click delegation
   document.getElementById('classroomsGrid').addEventListener('click', (e) => {
@@ -523,7 +523,7 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
         document.getElementById('classroomType').value = c.type || '';
         document.getElementById('classroomPax').value = c.pax || c.capacity || '';
         document.getElementById('classroomAddModalTitle').textContent = 'Edit Classroom';
-        openModal('classroomAddModal');
+        window.openModal('classroomAddModal');
       }
       return;
     }
@@ -572,7 +572,7 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
       document.getElementById('adminNav').style.display = 'block';
       document.getElementById('quickScheduleBtn').style.display = 'inline-flex';
       document.getElementById('roleSwitcher').style.display = 'inline-flex';
-      switchView('dashboard');
+      window.switchView('dashboard');
     });
   });
     
@@ -593,7 +593,7 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
     }
     document.getElementById('trainerLoginPassword').value = '';
     document.getElementById('trainerLoginError').style.display = 'none';
-    openModal('trainerLoginModal');
+    window.openModal('trainerLoginModal');
   });
 
   // Role Switcher - allow Admin to switch to Trainer view for testing
@@ -613,7 +613,7 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
       
       document.getElementById('trainerLoginPassword').value = '';
       document.getElementById('trainerLoginError').style.display = 'none';
-      openModal('trainerLoginModal');
+      window.openModal('trainerLoginModal');
       e.target.value = 'admin'; 
     } else {
       AppState.currentRole = 'admin';
@@ -621,7 +621,7 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
       document.getElementById('adminNav').style.display = 'block';
       document.getElementById('trainerNav').style.display = 'none';
       document.getElementById('quickScheduleBtn').style.display = 'inline-flex';
-      switchView('dashboard');
+      window.switchView('dashboard');
     }
   });
 
@@ -650,16 +650,16 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
     const tid = document.getElementById('trainerLoginSelect').value;
     const t = getTrainer(tid);
     if (!t) {
-      showToast('Please select your profile first.', 'warning');
+      window.showToast('Please select your profile first.', 'warning');
       return;
     }
     t.password = null; // Simulate reset
-    showToast('A password reset link has been sent to your email! (Simulation: Password cleared)', 'success');
+    window.showToast('A password reset link has been sent to your email! (Simulation: Password cleared)', 'success');
     document.getElementById('trainerLoginSelect').dispatchEvent(new Event('change'));
   });
 
   document.getElementById('cancelTrainerLoginBtn').addEventListener('click', () => {
-    closeModal('trainerLoginModal');
+    window.closeModal('trainerLoginModal');
   });
 
   document.getElementById('confirmTrainerLoginBtn').addEventListener('click', () => {
@@ -692,9 +692,9 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
       
       document.getElementById('roleSwitcher').style.display = AppState.loggedInAs === 'admin' ? 'inline-flex' : 'none';
       
-      closeModal('trainerLoginModal');
-      renderTrainerPortal();
-      switchView('trainer-dashboard');
+      window.closeModal('trainerLoginModal');
+      window.renderTrainerPortal();
+      window.switchView('trainer-dashboard');
     };
 
     if (AppState.loggedInAs !== 'admin') {
@@ -711,7 +711,7 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
         }
         hashPassword(pwdInput).then(hashedPwd => {
           t.password = hashedPwd;
-          showToast('Password created successfully!', 'success');
+          window.showToast('Password created successfully!', 'success');
           proceedLogin();
         });
       } else {
@@ -744,7 +744,7 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
     document.getElementById('trainerLoginPassword').value = '';
     document.getElementById('splashAdminError').style.display = 'none';
     document.getElementById('trainerLoginError').style.display = 'none';
-    switchView('dashboard');
+    window.switchView('dashboard');
   });
 
   // Delete event
@@ -774,15 +774,15 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
       document.getElementById('unavailabilityModalTitle').textContent = 'Add Leave/Busy';
       const delBtn = document.getElementById('deleteUnavailabilityBtn');
       if (delBtn) delBtn.style.display = 'none';
-      openModal('unavailabilityModal');
+      window.openModal('unavailabilityModal');
     });
   }
   const unavailabilityForm = document.getElementById('unavailabilityForm');
   if (unavailabilityForm) unavailabilityForm.addEventListener('submit', saveUnavailability);
   const cancelUnavailabilityBtn = document.getElementById('cancelUnavailabilityBtn');
-  if (cancelUnavailabilityBtn) cancelUnavailabilityBtn.addEventListener('click', () => closeModal('unavailabilityModal'));
+  if (cancelUnavailabilityBtn) cancelUnavailabilityBtn.addEventListener('click', () => window.closeModal('unavailabilityModal'));
   const closeUnavailabilityModal = document.getElementById('closeUnavailabilityModal');
-  if (closeUnavailabilityModal) closeUnavailabilityModal.addEventListener('click', () => closeModal('unavailabilityModal'));
+  if (closeUnavailabilityModal) closeUnavailabilityModal.addEventListener('click', () => window.closeModal('unavailabilityModal'));
 
   // Request Cover Workflow
   document.getElementById('requestCoverBtn').addEventListener('click', () => {
@@ -800,12 +800,12 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
     });
     select.innerHTML = html;
     
-    closeModal('eventDetailModal');
-    openModal('requestCoverModal');
+    window.closeModal('eventDetailModal');
+    window.openModal('requestCoverModal');
   });
   
   document.getElementById('cancelCoverBtn').addEventListener('click', () => {
-    closeModal('requestCoverModal');
+    window.closeModal('requestCoverModal');
   });
   
   document.getElementById('confirmCoverBtn').addEventListener('click', () => {
@@ -816,10 +816,10 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
       ev.coverRequestedBy = AppState.currentTrainerId || ev.trainerIds[0];
       ev.coverAdminRequested = !AppState.currentTrainerId;
       ev.coverRequestedTo = document.getElementById('coverRequestSelect').value;
-      showToast('Cover request sent!', 'success');
+      window.showToast('Cover request sent!', 'success');
     }
-    closeModal('requestCoverModal');
-    renderTrainerPortal();
+    window.closeModal('requestCoverModal');
+    window.renderTrainerPortal();
   });
 
   // Overlay click to close
@@ -836,7 +836,7 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
   document.getElementById('assistantResults').addEventListener('click', (e) => {
     const slot = e.target.closest('.suggest-slot');
     if (slot) {
-      switchView('schedule');
+      window.switchView('schedule');
       setTimeout(() => {
         const formDate = document.getElementById('formDate');
         if (formDate) {

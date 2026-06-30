@@ -125,15 +125,15 @@ const saveBatch = (e) => {
   const mentorIds = [...document.querySelectorAll('input[name="batchMentorIds"]:checked')].map(el => el.value);
 
   if (!name || !start || isNaN(students)) {
-    showToast('Please fill in all required batch fields.', 'warning');
+    window.showToast('Please fill in all required batch fields.', 'warning');
     return;
   }
   if (students < 0) {
-    showToast('Number of trainees cannot be negative.', 'warning');
+    window.showToast('Number of trainees cannot be negative.', 'warning');
     return;
   }
   if (end && new Date(end) <= new Date(start)) {
-    showToast('End date must be after start date.', 'warning');
+    window.showToast('End date must be after start date.', 'warning');
     return;
   }
 
@@ -148,15 +148,15 @@ const saveBatch = (e) => {
       b.mentorIds = mentorIds;
       b.colorHex = color;
       b.homeroom = homeroom;
-      showToast(`Batch "${name}" updated!`, 'success');
+      window.showToast(`Batch "${name}" updated!`, 'success');
     }
   } else {
     const batch = { id: `b${uid()}`, name, startDate: start, endDate: end, students, status, mentorIds, colorHex: color, homeroom };
     AppState.batches.push(batch);
-    showToast(`Batch "${name}" created!`, 'success');
+    window.showToast(`Batch "${name}" created!`, 'success');
   }
 
-  closeModal('batchModal');
+  window.closeModal('batchModal');
   renderBatches();
 };
 

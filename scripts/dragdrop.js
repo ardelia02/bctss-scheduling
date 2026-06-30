@@ -20,7 +20,7 @@ const initDragDrop = () => {
     // Prevent dragging if admin doesn't own it
     if (AppState.loggedInAs === 'admin' && ev.scheduledBy !== AppState.currentAdminId) {
       e.preventDefault();
-      showToast("You can only move lessons you scheduled.", 'warning');
+      window.showToast("You can only move lessons you scheduled.", 'warning');
       return;
     }
     
@@ -125,7 +125,7 @@ const initDragDrop = () => {
     }
 
     document.getElementById('dragConfirmBody').innerHTML = bodyHtml;
-    openModal('dragConfirmModal');
+    window.openModal('dragConfirmModal');
 
     dragEventId    = null;
     dragTargetDate = null;
@@ -142,9 +142,9 @@ const confirmDrop = () => {
     ev.endTime   = pendingDrop.endTime;
   }
   pendingDrop = null;
-  closeModal('dragConfirmModal');
-  showToast('Lesson rescheduled!', 'success');
-  renderCalendar();
+  window.closeModal('dragConfirmModal');
+  window.showToast('Lesson rescheduled!', 'success');
+  window.renderCalendar();
 };
 
 

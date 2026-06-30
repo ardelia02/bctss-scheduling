@@ -98,7 +98,7 @@ window.openTrainerAnalytics = (trainerId) => {
   }
   
   window.renderAdminTrainerStats(trainerId, monthSelect ? monthSelect.value : 'all');
-  openModal('trainerAnalyticsModal');
+  window.openModal('trainerAnalyticsModal');
 };
 
 window.renderAdminTrainerStats = (trainerId, monthStr) => {
@@ -197,7 +197,7 @@ const saveAdmin = (e) => {
   const password = document.getElementById('adminPassword').value.trim();
 
   if (!name || (!id && !password)) {
-    showToast('Name and password are required for new admins.', 'warning');
+    window.showToast('Name and password are required for new admins.', 'warning');
     return;
   }
 
@@ -209,16 +209,16 @@ const saveAdmin = (e) => {
       if (a) {
         a.name = name;
         if (hashedPwd) a.password = hashedPwd;
-        showToast(`Admin "${name}" updated!`, 'success');
+        window.showToast(`Admin "${name}" updated!`, 'success');
       }
     } else {
       const newId = `ad${uid()}`;
       AppState.admins.push({ id: newId, name, password: hashedPwd });
-      showToast(`Admin "${name}" added!`, 'success');
+      window.showToast(`Admin "${name}" added!`, 'success');
     }
 
-    closeModal('adminModal');
-    renderAdmins();
+    window.closeModal('adminModal');
+    window.renderAdmins();
     
     // Also update splash login dropdown just in case
     const adminSel = document.getElementById('splashAdminSelect');
@@ -239,7 +239,7 @@ const saveTrainer = (e) => {
   const courseIds= [...document.querySelectorAll('input[name="trainerCourseIds"]:checked')].map(el => el.value);
 
   if (!name || !initials) {
-    showToast('Name and initials are required.', 'warning');
+    window.showToast('Name and initials are required.', 'warning');
     return;
   }
 
@@ -250,13 +250,13 @@ const saveTrainer = (e) => {
       t.name = name;
       t.initials = initials;
       t.type = type;
-      showToast(`Trainer "${name}" updated!`, 'success');
+      window.showToast(`Trainer "${name}" updated!`, 'success');
     }
   } else {
     tId = `tr${uid()}`;
     const trainer = { id: tId, name, initials, type };
     AppState.trainers.push(trainer);
-    showToast(`Trainer "${name}" added!`, 'success');
+    window.showToast(`Trainer "${name}" added!`, 'success');
   }
 
   // Update auth matrix for this trainer
@@ -272,9 +272,9 @@ const saveTrainer = (e) => {
     }
   });
 
-  closeModal('trainerModal');
+  window.closeModal('trainerModal');
   renderTrainers();
-  renderMatrix(); // re-render authorization matrix to include new trainer
+  window.renderMatrix(); // re-render authorization matrix to include new trainer
 };
 
 

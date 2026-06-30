@@ -34,7 +34,7 @@ const loadState = () => {
     } catch (e) {
       // Optionally notify user
       if (typeof showToast === 'function') {
-        setTimeout(() => showToast('Local storage corrupted. Default data loaded.', 'danger'), 1000);
+        setTimeout(() => window.showToast('Local storage corrupted. Default data loaded.', 'danger'), 1000);
       }
     }
   }
@@ -93,7 +93,7 @@ function saveState() {
     localStorage.setItem('bctss_schedule_state', encodeBase64(jsonState));
   } catch (err) {
     if (typeof showToast === 'function') {
-      showToast('Failed to save data. Storage quota exceeded.', 'danger');
+      window.showToast('Failed to save data. Storage quota exceeded.', 'danger');
     }
   }
 }

@@ -9,7 +9,7 @@ const FormDOM = {
   }
 };
 const fillScheduleForm = (date, start, end) => {
-  switchView('schedule');
+  window.switchView('schedule');
   setTimeout(() => {
     const d = FormDOM.get('formDate');
     const s = FormDOM.get('formStartTime');
@@ -172,11 +172,11 @@ const checkAvailability = () => {
   const endTime   = FormDOM.get('formEndTime').value;
 
   if (!date || !startTime || !endTime) {
-    showToast('Please fill in date and time fields first.', 'warning');
+    window.showToast('Please fill in date and time fields first.', 'warning');
     return;
   }
   if (timeToMin(startTime) >= timeToMin(endTime)) {
-    showToast('End time must be after start time.', 'warning');
+    window.showToast('End time must be after start time.', 'warning');
     return;
   }
 
@@ -345,11 +345,11 @@ const saveSchedule = (e) => {
 
   if (submitBtn) submitBtn.disabled = false;
 
-  saveState();
+  window.saveState();
   if (PUBLIC_HOLIDAYS.includes(date)) {
-    showToast(`Warning: ${escapeHTML(getLesson(lessonId).name)} scheduled on a Public Holiday!`, 'warning');
+    window.showToast(`Warning: ${escapeHTML(getLesson(lessonId).name)} scheduled on a Public Holiday!`, 'warning');
   } else {
-    showToast(`Lesson scheduled: ${escapeHTML(getLesson(lessonId).name)}`, 'success');
+    window.showToast(`Lesson scheduled: ${escapeHTML(getLesson(lessonId).name)}`, 'success');
   }
   
   // Clear time and trainer/classroom selections, but keep date, lesson, batch

@@ -66,7 +66,7 @@ window.sendUnderstudyRequest = (eventId, toTrainerId) => {
   const avail = getAvailability(ev.date, ev.startTime, ev.endTime);
   const trainerAvail = avail.trainers.find(t => t.id === tId);
   if (!trainerAvail || !trainerAvail.available || trainerAvail.warning) {
-    showToast('You are already scheduled or busy during this class time. Cannot understudy.', 'danger');
+    window.showToast('You are already scheduled or busy during this class time. Cannot understudy.', 'danger');
     return;
   }
 
@@ -78,13 +78,13 @@ window.sendUnderstudyRequest = (eventId, toTrainerId) => {
     status: 'pending',
     createdAt: new Date().toISOString()
   });
-  saveState();
-  showToast('Understudy request sent!', 'success');
+  window.saveState();
+  window.showToast('Understudy request sent!', 'success');
   
   // Re-render
   const lessonId = document.getElementById('understudyModuleSelect').value;
   renderUnderstudyOpportunities(lessonId);
-  renderTrainerPortal();
+  window.renderTrainerPortal();
 };
 
 window.approveUnderstudyRequest = (reqId) => {
@@ -100,30 +100,30 @@ window.approveUnderstudyRequest = (reqId) => {
   }
   
   req.status = 'accepted';
-  saveState();
-  showToast('Understudy request approved!', 'success');
-  renderTrainerPortal();
+  window.saveState();
+  window.showToast('Understudy request approved!', 'success');
+  window.renderTrainerPortal();
 };
 
 window.rejectUnderstudyRequest = (reqId) => {
   const req = AppState.understudyRequests.find(r => r.id === reqId);
   if (!req) return;
   req.status = 'rejected';
-  saveState();
-  showToast('Understudy request declined.', 'success');
-  renderTrainerPortal();
+  window.saveState();
+  window.showToast('Understudy request declined.', 'success');
+  window.renderTrainerPortal();
 };
 
 window.cancelUnderstudyRequest = (reqId) => {
   const idx = AppState.understudyRequests.findIndex(r => r.id === reqId);
   if (idx !== -1) {
     AppState.understudyRequests.splice(idx, 1);
-    saveState();
-    showToast('Request canceled.', 'success');
+    window.saveState();
+    window.showToast('Request canceled.', 'success');
     
     const lessonId = document.getElementById('understudyModuleSelect').value;
     if (lessonId) renderUnderstudyOpportunities(lessonId);
-    renderTrainerPortal();
+    window.renderTrainerPortal();
   }
 };
 

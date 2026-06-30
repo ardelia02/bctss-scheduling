@@ -11,6 +11,6 @@ const navigateCalendar = (direction) => {
     d.setDate(d.getDate() + direction);
   }
   AppState.calendarDate = d;
-  renderCalendar();
+  window.renderCalendar();
 };
 
