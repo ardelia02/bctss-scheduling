@@ -331,3 +331,4 @@ window.navClassroomModalCalendar = (dir) => {
 window.renderClassrooms = renderClassrooms;
 
 window.showClassroomSchedule = showClassroomSchedule;
+window.renderReusableWeekGrid = renderReusableWeekGrid;
