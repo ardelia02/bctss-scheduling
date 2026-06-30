@@ -1351,4 +1351,14 @@
   }
   
   .cal-weekday-headers, .cal-grid {
-    min-width: 600px; /* Force minim
+    min-width: 600px; /* Force minimum width to allow scrolling instead of squishing */
+  }
+  
+  .week-view {
+    min-width: 600px;
+  }
+  
+  .trainer-leave-list {
+    max-height: 300px;
+  }
+}
