@@ -64,20 +64,4 @@ const renderMatrix = () => {
 
 
 
-// --- Auto-generated globals for Vite migration ---
-window.saveTopic = saveTopic;
 window.renderMatrix = renderMatrix;
-window.updateTrainerCoursesLabel = updateTrainerCoursesLabel;
-window.updateLessonPrerequisiteLabel = updateLessonPrerequisiteLabel;
-window.saveTrainer = saveTrainer;
-window.renderLessons = renderLessons;
-window.showClassroomSchedule = showClassroomSchedule;
-window.saveAdmin = saveAdmin;
-window.buildTrainerCoursesDropdown = buildTrainerCoursesDropdown;
-window.buildLessonTrainerDropdown = buildLessonTrainerDropdown;
-window.saveClassroom = saveClassroom;
-window.buildLessonPrerequisiteDropdown = buildLessonPrerequisiteDropdown;
-window.renderTrainers = renderTrainers;
-window.renderClassrooms = renderClassrooms;
-window.saveLesson = saveLesson;
-window.renderReusableWeekGrid = renderReusableWeekGrid;
