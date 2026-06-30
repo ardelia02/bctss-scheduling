@@ -50,7 +50,7 @@ const init = () => {
 
   // Import Schedule Confirm
   document.getElementById('confirmImportBtn').addEventListener('click', async () => {
-    if (!currentImportTrainerId) return;
+    if (!AppState.currentImportTrainerId) return;
     
     const fileInput = document.querySelector('#importScheduleModal input[type="file"]');
     if (!fileInput.value) {
@@ -72,7 +72,7 @@ const init = () => {
       startTime: '09:00',
       endTime: '11:00',
       classroomIds: [],
-      trainerIds: [currentImportTrainerId],
+      trainerIds: [AppState.currentImportTrainerId],
       status: 'scheduled',
       isCovering: false
     });
@@ -99,5 +99,4 @@ window.addEventListener('beforeunload', saveState);
 window.updateTopbarDate = updateTopbarDate;
 window.navigateCalendar = navigateCalendar;
 window.initEventListeners = initEventListeners;
-window.populateTimeDropdowns = populateTimeDropdowns;
-window.init = init;
+window.populateTimeDropdowns

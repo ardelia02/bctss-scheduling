@@ -74,7 +74,6 @@ window.renderLessons = renderLessons;
 window.showClassroomSchedule = showClassroomSchedule;
 window.saveAdmin = saveAdmin;
 window.buildTrainerCoursesDropdown = buildTrainerCoursesDropdown;
-window.currentModalClassroomId = currentModalClassroomId;
 window.buildLessonTrainerDropdown = buildLessonTrainerDropdown;
 window.saveClassroom = saveClassroom;
 window.buildLessonPrerequisiteDropdown = buildLessonPrerequisiteDropdown;

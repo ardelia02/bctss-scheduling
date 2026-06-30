@@ -1,7 +1,6 @@
 /* ================================================================
    16. EVENT DETAIL MODAL
    ================================================================ */
-let currentDetailEventId = null;
 
 const showEventDetail = (eventId) => {
   let ev = AppState.events.find(e => e.id === eventId);
@@ -32,7 +31,7 @@ const showEventDetail = (eventId) => {
     return;
   }
 
-  currentDetailEventId = eventId;
+  AppState.currentDetailEventId = eventId;
   const lesson    = getLesson(ev.lessonId);
   const crNames   = (ev.classroomIds || []).map(id => (getClassroom(id) || {}).name).filter(Boolean).join(', ');
   const batchNames = (ev.batchIds || []).map(id => (getBatch(id) || {}).name).filter(Boolean).join(', ');
@@ -126,8 +125,8 @@ const showEventDetail = (eventId) => {
 };
 
 const cancelEvent = () => {
-  if (!currentDetailEventId) return;
-  const ev = AppState.events.find(e => e.id === currentDetailEventId);
+  if (!AppState.currentDetailEventId) return;
+  const ev = AppState.events.find(e => e.id === AppState.currentDetailEventId);
   if (ev) {
     ev.status = 'cancelled';
   }
@@ -194,8 +193,8 @@ const editEvent = (eventId) => {
 };
 
 const deleteEvent = () => {
-  if (!currentDetailEventId) return;
-  AppState.events = AppState.events.filter(e => e.id !== currentDetailEventId);
+  if (!AppState.currentDetailEventId) return;
+  AppState.events = AppState.events.filter(e => e.id !== AppState.currentDetailEventId);
   window.closeModal('eventDetailModal');
   window.showToast('Lesson deleted.', 'success');
 
@@ -209,9 +208,4 @@ const deleteEvent = () => {
 
 
 
-// --- Auto-generated globals for Vite migration ---
-window.currentDetailEventId = currentDetailEventId;
-window.showEventDetail = showEventDetail;
-window.cancelEvent = cancelEvent;
-window.deleteEvent = deleteEvent;
-window.editEvent = editEvent;
+// --- Auto-generate

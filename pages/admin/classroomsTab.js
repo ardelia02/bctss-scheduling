@@ -260,13 +260,12 @@ const renderReusableWeekGrid = (containerId, anchor, events, onEmptyClick = null
   setTimeout(() => { if (body) body.scrollTop = (8 - START_H) * HOUR_H - 16; }, 30);
 };
 
-let currentModalClassroomId = null;
 
 const showClassroomSchedule = (crid) => {
   const c = getClassroom(crid);
   if (!c) return;
 
-  currentModalClassroomId = crid;
+  AppState.currentModalClassroomId = crid;
   
   let anchor = AppState.calendarDate || new Date();
   if (isNaN(anchor.getTime())) anchor = new Date();
@@ -315,20 +314,14 @@ const showClassroomSchedule = (crid) => {
 };
 
 window.navClassroomModalCalendar = (dir) => {
-  if (!currentModalClassroomId) return;
+  if (!AppState.currentModalClassroomId) return;
   let anchor = AppState.calendarDate || new Date();
   if (isNaN(anchor.getTime())) anchor = new Date();
   const d = safeDate(anchor);
   d.setDate(d.getDate() + dir * 7);
   AppState.calendarDate = d;
-  showClassroomSchedule(currentModalClassroomId);
+  showClassroomSchedule(AppState.currentModalClassroomId);
   
   // Keep the main calendar in sync visually
   if (AppState.activeView === 'calendar') {
-    window.renderCalendar();
-  }
-};
-
-window.renderClassrooms = renderClassrooms;
-
-window.showClassroomSchedule = showClassroomSchedule;
+    window.
