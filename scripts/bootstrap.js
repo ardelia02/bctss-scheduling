@@ -99,4 +99,5 @@ window.addEventListener('beforeunload', saveState);
 window.updateTopbarDate = updateTopbarDate;
 window.navigateCalendar = navigateCalendar;
 window.initEventListeners = initEventListeners;
-window.populateTimeDropdowns
+window.populateTimeDropdowns = populateTimeDropdowns;
+window.init = init;

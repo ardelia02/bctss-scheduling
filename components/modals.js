@@ -208,4 +208,8 @@ const deleteEvent = () => {
 
 
 
-// --- Auto-generate
+// --- Auto-generated globals for Vite migration ---
+window.showEventDetail = showEventDetail;
+window.cancelEvent = cancelEvent;
+window.deleteEvent = deleteEvent;
+window.editEvent = editEvent;

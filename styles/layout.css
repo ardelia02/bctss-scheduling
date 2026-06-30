@@ -436,4 +436,116 @@ hr.divider { border: none; border-top: 1px solid var(--gray-100); margin: 16px 0
   text-align: left;
 }
 .splash-card-title {
-  margin-bottom: 1
+  margin-bottom: 16px;
+  color: var(--brand-700);
+}
+
+/* ================================================================
+   RESPONSIVE LAYOUT QUERIES
+   ================================================================ */
+
+/* Ultra-wide Displays (1920px+) */
+@media (min-width: 1920px) {
+  .topbar {
+    max-width: 1800px;
+    margin: 0 auto;
+    left: var(--sidebar-width);
+    right: 0;
+  }
+  .main-content {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+  .sidebar.collapsed ~ .topbar {
+    left: var(--sidebar-collapsed-width);
+  }
+}
+
+/* Tablet / Small Desktop (768px - 1024px) */
+@media (max-width: 1024px) {
+  /* Let sidebar collapse by default (handled by JS toggling 'collapsed' or we could force it here) */
+  .metrics-grid, .classroom-grid, .topic-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  }
+  
+  .splash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile (320px - 768px) */
+@media (max-width: 768px) {
+  /* Sidebar off-canvas */
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+  }
+  
+  /* When sidebar is opened via JS on mobile, we can use a class like .sidebar.mobile-open */
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  .topbar {
+    left: 0;
+    padding: 0 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    height: auto;
+    min-height: 64px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  
+  .topbar-menu-btn {
+    display: flex !important;
+  }
+  
+  .topbar-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .topbar-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding: 72px 12px 24px;
+  }
+  
+  .sidebar.collapsed ~ .topbar, .sidebar.collapsed ~ .main-content {
+    left: 0;
+    margin-left: 0;
+  }
+  
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .view-header-actions {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  
+  .modal-sm, .modal {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 10px;
+    padding: 16px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .modal-actions button {
+    width: 100%;
+  }
+}

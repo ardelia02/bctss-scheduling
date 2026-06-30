@@ -324,4 +324,10 @@ window.navClassroomModalCalendar = (dir) => {
   
   // Keep the main calendar in sync visually
   if (AppState.activeView === 'calendar') {
-    window.
+    window.renderCalendar();
+  }
+};
+
+window.renderClassrooms = renderClassrooms;
+
+window.showClassroomSchedule = showClassroomSchedule;
