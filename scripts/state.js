@@ -50,11 +50,18 @@ function saveState() {
       understudyRequests: AppState.understudyRequests || []
     });
     
-    setDoc(doc(db, 'app', 'global_state'), { payload: jsonState });
-    
+    setDoc(doc(db, 'app', 'global_state'), { payload: jsonState })
+      .catch(err => {
+        console.error("Firestore Write Error:", err);
+        if (typeof showToast === 'function') {
+          window.showToast('Failed to save to cloud: ' + err.message, 'danger');
+        }
+        alert("CRITICAL: Failed to save to Firebase!\n\nError: " + err.message + "\n\nIf this says 'Missing or insufficient permissions', you need to update your Firestore Security Rules to allow read/write.");
+      });
+      
   } catch (err) {
     if (typeof showToast === 'function') {
-      window.showToast('Failed to sync data to cloud.', 'danger');
+      window.showToast('Failed to prepare data for cloud sync.', 'danger');
     }
   }
 }
