@@ -85,6 +85,60 @@ const runAssistant = () => {
   const avail = getAvailability(date, '00:00', '23:59');
   const authTrainerAvail = avail.trainers.filter(t => authTrs.some(at => at.id === t.id));
 
+  // Compute HTML for authorised trainers
+  let authTrainerHtml = '';
+  if (authTrainerAvail.length === 0) {
+    authTrainerHtml = '<p class="hint-text">No authorised trainers found.</p>';
+  } else {
+    // Precompute trainer hours for sorting
+    const trainerHours = {};
+    AppState.events.forEach(e => {
+      if (e.status !== 'cancelled' && e.date) {
+        const mins = timeToMin(e.endTime) - timeToMin(e.startTime);
+        (e.trainerIds || []).forEach(tid => {
+          trainerHours[tid] = (trainerHours[tid] || 0) + mins;
+        });
+        (e.understudyIds || []).forEach(tid => {
+          trainerHours[tid] = (trainerHours[tid] || 0) + mins;
+        });
+      }
+    });
+    
+    const getHrs = (tId) => Math.round((trainerHours[tId] || 0) / 60 * 10) / 10;
+    
+    authTrainerAvail.sort((a, b) => {
+      if (a.available === b.available) {
+        return getHrs(a.id) - getHrs(b.id);
+      }
+      return a.available ? -1 : 1;
+    });
+
+    authTrainerHtml = authTrainerAvail.map(t => {
+      let statusHtml = '';
+      let itemClass = 'unavailable';
+      let detail = '';
+      if (t.available) {
+        if (t.warning) {
+          statusHtml = '<span>⚠️</span>';
+          itemClass = 'warning';
+          detail = '<span style="font-size:11px;opacity:.8;font-weight:600;color:#b45309;">(' + t.warning.type.toUpperCase() + ')</span>';
+        } else {
+          statusHtml = '<span>✓</span>';
+          itemClass = 'available';
+        }
+      } else {
+        statusHtml = '<span>✗</span>';
+        detail = '<span style="font-size:11px;opacity:.7">(Occupied)</span>';
+      }
+      return `
+      <div class="assist-item ${itemClass}">
+        ${statusHtml}
+        <span>${escapeHTML(t.name)} <span style="font-size:11px; color:var(--gray-500); margin-left:4px;">(${getHrs(t.id)} hrs)</span></span>
+        ${detail}
+      </div>`;
+    }).join('');
+  }
+
   results.innerHTML = `
     <div style="padding: 4px 0 16px">
       <h3 style="font-size:16px;font-weight:800;color:var(--gray-900);margin-bottom:4px">
@@ -135,57 +189,7 @@ const runAssistant = () => {
         </svg>
         Authorised Trainer Availability
       </div>
-      ${(() => {
-        if (authTrainerAvail.length === 0) return '<p class="hint-text">No authorised trainers found.</p>';
-        
-        // Precompute trainer hours for sorting
-        const trainerHours = {};
-        AppState.events.forEach(e => {
-          if (e.status !== 'cancelled' && e.date) {
-            const mins = timeToMin(e.endTime) - timeToMin(e.startTime);
-            (e.trainerIds || []).forEach(tid => {
-              trainerHours[tid] = (trainerHours[tid] || 0) + mins;
-            });
-            (e.understudyIds || []).forEach(tid => {
-              trainerHours[tid] = (trainerHours[tid] || 0) + mins;
-            });
-          }
-        });
-        
-        const getHrs = (tId) => Math.round((trainerHours[tId] || 0) / 60 * 10) / 10;
-        
-        authTrainerAvail.sort((a, b) => {
-          if (a.available === b.available) {
-            return getHrs(a.id) - getHrs(b.id);
-          }
-          return a.available ? -1 : 1;
-        });
-
-        return authTrainerAvail.map(t => {
-          let statusHtml = '';
-          let itemClass = 'unavailable';
-          let detail = '';
-          if (t.available) {
-            if (t.warning) {
-              statusHtml = `<span>⚠️</span>`;
-              itemClass = 'warning';
-              detail = `<span style="font-size:11px;opacity:.8;font-weight:600;color:#b45309;">(${t.warning.type.toUpperCase()})</span>`;
-            } else {
-              statusHtml = `<span>✓</span>`;
-              itemClass = 'available';
-            }
-          } else {
-            statusHtml = `<span>✗</span>`;
-            detail = '<span style="font-size:11px;opacity:.7">(Occupied)</span>';
-          }
-          return `
-          <div class="assist-item ${itemClass}">
-            ${statusHtml}
-            <span>${escapeHTML(t.name)} <span style="font-size:11px; color:var(--gray-500); margin-left:4px;">(${getHrs(t.id)} hrs)</span></span>
-            ${detail}
-          </div>`;
-        }).join('');
-      })()}
+      ${authTrainerHtml}
     </div>`;
 };
 
@@ -258,56 +262,60 @@ const updateFormAssistant = () => {
         </div>`).join('')}
     </div>`;
 
+    // Compute HTML for trainers side-panel
+    let panelTrainerHtml = '';
+    const trainerHoursPanel = {};
+    AppState.events.forEach(e => {
+      if (e.status !== 'cancelled' && e.date) {
+        const mins = timeToMin(e.endTime) - timeToMin(e.startTime);
+        (e.trainerIds || []).forEach(tid => {
+          trainerHoursPanel[tid] = (trainerHoursPanel[tid] || 0) + mins;
+        });
+        (e.understudyIds || []).forEach(tid => {
+          trainerHoursPanel[tid] = (trainerHoursPanel[tid] || 0) + mins;
+        });
+      }
+    });
+    
+    const getHrsPanel = (tId) => Math.round((trainerHoursPanel[tId] || 0) / 60 * 10) / 10;
+    
+    const filteredTrainersPanel = avail.trainers.filter(t => authTrs.some(a => a.id === t.id));
+    filteredTrainersPanel.sort((a, b) => {
+      if (a.available === b.available) {
+        return getHrsPanel(a.id) - getHrsPanel(b.id);
+      }
+      return a.available ? -1 : 1;
+    });
+
+    panelTrainerHtml = filteredTrainersPanel.map(t => {
+      let statusHtml = '';
+      let itemClass = 'unavailable';
+      if (t.available) {
+        if (t.warning) {
+          statusHtml = '<span style="color:#b45309;font-weight:600;">⚠️ ' + t.warning.type.toUpperCase() + '</span>';
+          itemClass = 'warning';
+        } else {
+          statusHtml = '✓';
+          itemClass = 'available';
+        }
+      } else {
+        statusHtml = '✗';
+      }
+      return `
+      <div class="assist-item ${itemClass}">
+        ${statusHtml} ${escapeHTML(t.name)} 
+        <span style="font-size:11px; color:var(--gray-500); margin-left:4px;">(${getHrsPanel(t.id)} hrs)</span>
+      </div>`;
+    }).join('') || '<p class="hint-text">No authorised trainers.</p>';
+
+
     html += `<div class="assist-group">
       <h5>Available Trainers</h5>
-      ${(() => {
-        // Precompute trainer hours for sorting
-        const trainerHours = {};
-        AppState.events.forEach(e => {
-          if (e.status !== 'cancelled' && e.date) {
-            const mins = timeToMin(e.endTime) - timeToMin(e.startTime);
-            (e.trainerIds || []).forEach(tid => {
-              trainerHours[tid] = (trainerHours[tid] || 0) + mins;
-            });
-            (e.understudyIds || []).forEach(tid => {
-              trainerHours[tid] = (trainerHours[tid] || 0) + mins;
-            });
-          }
-        });
-        
-        const getHrs = (tId) => Math.round((trainerHours[tId] || 0) / 60 * 10) / 10;
-        
-        const filteredTrainers = avail.trainers.filter(t => authTrs.some(a => a.id === t.id));
-        filteredTrainers.sort((a, b) => {
-          if (a.available === b.available) {
-            return getHrs(a.id) - getHrs(b.id);
-          }
-          return a.available ? -1 : 1;
-        });
-
-        return filteredTrainers.map(t => {
-          let statusHtml = '';
-          let itemClass = 'unavailable';
-          if (t.available) {
-            if (t.warning) {
-              statusHtml = `<span style="color:#b45309;font-weight:600;">⚠️ ${t.warning.type.toUpperCase()}</span>`;
-              itemClass = 'warning';
-            } else {
-              statusHtml = `✓`;
-              itemClass = 'available';
-            }
-          } else {
-            statusHtml = `✗`;
-          }
-          return `
-          <div class="assist-item ${itemClass}">
-            ${statusHtml} ${escapeHTML(t.name)} 
-            <span style="font-size:11px; color:var(--gray-500); margin-left:4px;">(${getHrs(t.id)} hrs)</span>
-          </div>`;
-        }).join('') || '<p class="hint-text">No authorised trainers.</p>';
-      })()}
+      ${panelTrainerHtml}
     </div>`;
 
     // Earliest slot suggestion
     const durationMin = timeToMin(endTime) - timeToMin(startTime);
-    const slotsToCheck = 
+    const slotsToCheck = [];
+    for (let m = 8*60; m + durationMin <= 18*60; m += 30) {
+      const s = `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padS
