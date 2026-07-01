@@ -194,16 +194,41 @@ const checkAvailability = () => {
       ${!c.available ? '<span class="avail-note">(Occupied)</span>' : ''}
     </div>`).join('');
 
+  // Precompute trainer hours for sorting
+  const trainerHours = {};
+  AppState.events.forEach(e => {
+    if (e.status !== 'cancelled' && e.date) {
+      const mins = timeToMin(e.endTime) - timeToMin(e.startTime);
+      (e.trainerIds || []).forEach(tid => {
+        trainerHours[tid] = (trainerHours[tid] || 0) + mins;
+      });
+      (e.understudyIds || []).forEach(tid => {
+        trainerHours[tid] = (trainerHours[tid] || 0) + mins;
+      });
+    }
+  });
+  
+  const getHrs = (tId) => Math.round((trainerHours[tId] || 0) / 60 * 10) / 10;
+
   // Trainer list
   const lessonId     = FormDOM.get('formLesson').value;
   const authTrainerIds = AppState.authMatrix[lessonId] || [];
   const trList       = FormDOM.get('trainerAvailList');
-  trList.innerHTML   = avail.trainers
-    .filter(t => !lessonId || authTrainerIds.includes(t.id))
-    .map(t => `
+  
+  const filteredTrainers = avail.trainers.filter(t => !lessonId || authTrainerIds.includes(t.id));
+  
+  // Sort: Available first, then by lowest scheduled hours
+  filteredTrainers.sort((a, b) => {
+    if (a.available === b.available) {
+      return getHrs(a.id) - getHrs(b.id);
+    }
+    return a.available ? -1 : 1;
+  });
+
+  trList.innerHTML   = filteredTrainers.map(t => `
       <div class="avail-item ${t.available ? 'ok' : 'bad'}">
         <span class="avail-icon">${t.available ? '✓' : '✗'}</span>
-        <span>${escapeHTML(t.name)}</span>
+        <span>${escapeHTML(t.name)} <span style="font-size:11px; color:var(--gray-500)">(${getHrs(t.id)} hrs scheduled)</span></span>
         ${!t.available ? '<span class="avail-note">(Teaching another class)</span>' : ''}
       </div>`).join('') || '<p class="hint-text">Select a lesson to see authorised trainers.</p>';
 };
