@@ -218,6 +218,7 @@ const saveAdmin = (e) => {
     }
 
     window.closeModal('adminModal');
+    window.saveState();
     window.renderAdmins();
     
     // Also update splash login dropdown just in case
@@ -273,6 +274,7 @@ const saveTrainer = (e) => {
   });
 
   window.closeModal('trainerModal');
+    window.saveState();
   renderTrainers();
   window.renderMatrix(); // re-render authorization matrix to include new trainer
 };

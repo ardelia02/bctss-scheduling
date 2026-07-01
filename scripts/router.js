@@ -157,6 +157,7 @@ const saveBatch = (e) => {
   }
 
   window.closeModal('batchModal');
+    window.saveState();
   renderBatches();
 };
 

@@ -120,6 +120,7 @@ const saveClassroom = (e) => {
   }
   
   window.closeModal('classroomAddModal');
+    window.saveState();
   window.renderClassrooms();
   
   // Re-build any classroom dropdowns if needed
@@ -168,7 +169,7 @@ const saveTopic = (e) => {
     AppState.topics.push({ id: `top${uid()}`, name });
   }
   window.closeModal('topicModal');
-  window.saveState();
+    window.saveState();
   renderLessons();
   window.showToast('Topic saved!', 'success');
 };
@@ -214,6 +215,7 @@ const saveLesson = (e) => {
   AppState.authMatrix[lessonId] = authorisedTrainerIds;
   
   window.closeModal('lessonModal');
+    window.saveState();
   renderLessons();
 };
 
