@@ -43,9 +43,9 @@ const init = () => {
 
   window.renderLoginDropdowns = () => {
     const adminSel = document.getElementById('splashAdminSelect');
-    if (adminSel && AppState.admins) {
+    if (adminSel && window.AppState && window.AppState.admins) {
       adminSel.innerHTML = '<option value="">— Select your profile —</option>' + 
-        AppState.admins.map(a => `<option value="${a.id}">${escapeHTML(a.name)}</option>`).join('');
+        window.AppState.admins.map(a => `<option value="${a.id}">${window.escapeHTML(a.name)}</option>`).join('');
     }
   };
   window.renderLoginDropdowns();
