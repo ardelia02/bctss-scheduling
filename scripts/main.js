@@ -27,6 +27,7 @@ import "../utilities/validators.js";
 
 import "./calendarNav.js";
 import "./understudy.js";
+import "./navigation.js";
 import "./events.js";
 import "./topbar.js";
 import "./bootstrap.js";
