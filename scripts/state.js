@@ -1,87 +1,39 @@
-/* ================================================================
-   1. SEED DATA – Pre-populated resources and sample schedule
-   ================================================================ */
-
-
-
-/* ================================================================
-   2. APPLICATION STATE
-   ================================================================ */
-const loadState = () => {
-  const saved = localStorage.getItem('bctss_schedule_state');
-  if (saved) {
-    try {
-      let jsonString = saved;
-      // If it doesn't look like JSON (starts with {), assume it's base64 encoded
-      if (!saved.startsWith('{')) {
-        jsonString = window.decodeBase64(saved);
-      }
-      const parsed = JSON.parse(jsonString);
-      // Validate structural integrity of the parsed state
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        throw new Error('State is not a valid object dictionary.');
-      }
-      
-      // Ensure required collections are arrays
-      const collections = ['admins', 'classrooms', 'trainers', 'topics', 'lessons', 'batches', 'events'];
-      for (const key of collections) {
-        if (parsed[key] && !Array.isArray(parsed[key])) {
-          throw new Error(`State corruption: expected array for ${key}`);
-        }
-      }
-      
-      return parsed;
-    } catch (e) {
-      // Optionally notify user
-      if (typeof showToast === 'function') {
-        setTimeout(() => window.showToast('Local storage corrupted. Default data loaded.', 'danger'), 1000);
-      }
-    }
-  }
-  return null;
-};
-
-const savedState = loadState();
+import { db, doc, setDoc, onSnapshot, getDoc } from './firebase.js';
 
 const AppState = {
-  admins:     savedState && savedState.admins ? savedState.admins : (SEED_DATA.admins ? [...SEED_DATA.admins] : []),
-  classrooms: savedState && savedState.classrooms ? savedState.classrooms : [...SEED_DATA.classrooms],
-  trainers:   savedState && savedState.trainers ? savedState.trainers : [...SEED_DATA.trainers],
-  topics:     savedState && savedState.topics ? savedState.topics : [...SEED_DATA.topics],
-  lessons:    savedState && savedState.lessons ? savedState.lessons : [...SEED_DATA.lessons],
-  unavailabilities: savedState && savedState.unavailabilities ? savedState.unavailabilities : [],
-  authMatrix: savedState && savedState.authMatrix ? savedState.authMatrix : Object.assign({}, SEED_DATA.authMatrix),
-  batches:    savedState && savedState.batches ? savedState.batches : [...SEED_DATA.batches],
-  events:     savedState && savedState.events ? savedState.events : [...SEED_DATA.events],
-  coverRequests: savedState && savedState.coverRequests ? savedState.coverRequests : [],
-  understudyRequests: savedState && savedState.understudyRequests ? savedState.understudyRequests : [],
+  admins:     [],
+  classrooms: [],
+  trainers:   [],
+  topics:     [],
+  lessons:    [],
+  unavailabilities: [],
+  authMatrix: {},
+  batches:    [],
+  events:     [],
+  coverRequests: [],
+  understudyRequests: [],
 
   activeView:    'dashboard',
-  calendarView:  'month',           // 'month' | 'week'
-  calendarDate:  new Date('2026-06-10T00:00:00'),        // current anchor date for calendar
-  selectedBatch: 'all',             // 'all' or a batch ID – filters calendar view
-  batchStatusFilter: 'active',      // 'all' | 'active' | 'upcoming' | 'completed'
+  calendarView:  'month',
+  calendarDate:  new Date('2026-06-10T00:00:00'),
+  selectedBatch: 'all',
+  batchStatusFilter: 'active',
 
-  currentRole: 'admin',             // 'admin' | 'trainer'
+  currentRole: 'admin',
   currentTrainerId: null,
   currentAdminId: null,
 
-  // Drag-drop state
   draggingEventId: null,
   dragTarget: null,
-
-  // Edit state
   editingEventId: null,
-
-  // Modal state — centralised here so all files can read/write without cross-file let bindings
   currentDetailEventId:   null,
   currentModalClassroomId: null,
   currentImportTrainerId:  null,
 };
 
-/* ================================================================
-   3. PERSISTENCE — save/load state to localStorage
-   ================================================================ */
+window.AppState = AppState;
+
+// Sync function - uploads entire state to Firestore
 function saveState() {
   try {
     const jsonState = JSON.stringify({
@@ -93,37 +45,120 @@ function saveState() {
       authMatrix:       AppState.authMatrix,
       batches:          AppState.batches,
       events:           AppState.events,
-      unavailabilities: AppState.unavailabilities || []
+      unavailabilities: AppState.unavailabilities || [],
+      coverRequests:    AppState.coverRequests || [],
+      understudyRequests: AppState.understudyRequests || []
     });
-    localStorage.setItem('bctss_schedule_state', window.encodeBase64(jsonState));
+    
+    setDoc(doc(db, 'app', 'global_state'), { payload: jsonState });
+    
   } catch (err) {
     if (typeof showToast === 'function') {
-      window.showToast('Failed to save data. Storage quota exceeded.', 'danger');
+      window.showToast('Failed to sync data to cloud.', 'danger');
     }
   }
 }
 window.saveState = saveState;
 
-// Data Migration: Ensure all lessons have topicId and prerequisiteIds
-AppState.lessons.forEach(l => {
-  if (!l.topicId) l.topicId = 'top1'; // Default to General
-  if (!l.prerequisiteIds) l.prerequisiteIds = [];
-});
-saveState();
+// Initial Load & Real-time Listener
+let initialLoadDone = false;
 
-// Ensure all events have an owner and understudyIds
-AppState.events.forEach(ev => {
-  if (!ev.understudyIds) ev.understudyIds = [];
-  if (AppState.admins && AppState.admins.length > 0 && !ev.scheduledBy) {
-    const randAdmin = AppState.admins[Math.floor(Math.random() * AppState.admins.length)];
-    ev.scheduledBy = randAdmin.id;
+onSnapshot(doc(db, 'app', 'global_state'), (docSnap) => {
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    if (data && data.payload) {
+      try {
+        const parsed = JSON.parse(data.payload);
+        
+        Object.assign(AppState, {
+          admins: parsed.admins || [],
+          classrooms: parsed.classrooms || [],
+          trainers: parsed.trainers || [],
+          topics: parsed.topics || [],
+          lessons: parsed.lessons || [],
+          unavailabilities: parsed.unavailabilities || [],
+          authMatrix: parsed.authMatrix || {},
+          batches: parsed.batches || [],
+          events: parsed.events || [],
+          coverRequests: parsed.coverRequests || [],
+          understudyRequests: parsed.understudyRequests || []
+        });
+
+        // Force re-seed if the database is corrupted (empty admins)
+        if (AppState.admins.length === 0 && window.SEED_DATA) {
+          Object.assign(AppState, {
+            admins: [...(window.SEED_DATA?.admins || [])],
+            classrooms: [...(window.SEED_DATA?.classrooms || [])],
+            trainers: [...(window.SEED_DATA?.trainers || [])],
+            topics: [...(window.SEED_DATA?.topics || [])],
+            lessons: [...(window.SEED_DATA?.lessons || [])],
+            batches: [...(window.SEED_DATA?.batches || [])],
+            events: [...(window.SEED_DATA?.events || [])],
+            authMatrix: Object.assign({}, window.SEED_DATA?.authMatrix || {})
+          });
+          saveState(); // upload seed to cloud to fix corruption
+        }
+
+        // Trigger UI update
+        if (typeof window.renderLoginDropdowns === 'function') {
+          window.renderLoginDropdowns();
+        }
+        if (typeof window.switchView === 'function') {
+          window.switchView(AppState.activeView);
+        }
+        
+      } catch (e) {
+        console.error("Failed to parse cloud state", e);
+      }
+    }
+  } else {
+    // Document doesn't exist yet (first ever run), seed it!
+    if (!initialLoadDone) {
+      Object.assign(AppState, {
+        admins: [...(window.SEED_DATA?.admins || [])],
+        classrooms: [...(window.SEED_DATA?.classrooms || [])],
+        trainers: [...(window.SEED_DATA?.trainers || [])],
+        topics: [...(window.SEED_DATA?.topics || [])],
+        lessons: [...(window.SEED_DATA?.lessons || [])],
+        batches: [...(window.SEED_DATA?.batches || [])],
+        events: [...(window.SEED_DATA?.events || [])],
+        authMatrix: Object.assign({}, window.SEED_DATA?.authMatrix || {})
+      });
+      saveState(); // upload seed to cloud
+    }
+  }
+  
+  if (!initialLoadDone) {
+    initialLoadDone = true;
+    if (typeof window.renderLoginDropdowns === 'function') {
+      window.renderLoginDropdowns();
+    }
+    if (typeof window.switchView === 'function') {
+      window.switchView(AppState.activeView);
+    }
+  }
+}, (error) => {
+  console.error("Firebase Snapshot Error:", error);
+  alert("Database Error: " + error.message + "\n\nIf this says 'Missing or insufficient permissions', you need to go to your Firebase Console -> Firestore Database -> Rules, and set them to 'allow read, write: if true;'");
+  
+  // Fallback to local data so the app at least loads!
+  if (!initialLoadDone) {
+    initialLoadDone = true;
+    Object.assign(AppState, {
+      admins: [...(window.SEED_DATA?.admins || [])],
+      classrooms: [...(window.SEED_DATA?.classrooms || [])],
+      trainers: [...(window.SEED_DATA?.trainers || [])],
+      topics: [...(window.SEED_DATA?.topics || [])],
+      lessons: [...(window.SEED_DATA?.lessons || [])],
+      batches: [...(window.SEED_DATA?.batches || [])],
+      events: [...(window.SEED_DATA?.events || [])],
+      authMatrix: Object.assign({}, window.SEED_DATA?.authMatrix || {})
+    });
+    if (typeof window.renderLoginDropdowns === 'function') {
+      window.renderLoginDropdowns();
+    }
+    if (typeof window.switchView === 'function') {
+      window.switchView(AppState.activeView);
+    }
   }
 });
-
-
-
-// --- Auto-generated globals for Vite migration ---
-window.savedState  = savedState;
-window.AppState    = AppState;
-window.loadState   = loadState;
-window.SEED_DATA   = SEED_DATA;

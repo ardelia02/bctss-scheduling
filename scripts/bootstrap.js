@@ -41,12 +41,14 @@ const init = () => {
   document.getElementById('appContainer').style.display = 'none';
   document.getElementById('roleSwitcher').style.display = 'none';
 
-  // Populate Admin Dropdown
-  const adminSel = document.getElementById('splashAdminSelect');
-  if (adminSel && AppState.admins) {
-    adminSel.innerHTML = '<option value="">— Select your profile —</option>' + 
-      AppState.admins.map(a => `<option value="${a.id}">${escapeHTML(a.name)}</option>`).join('');
-  }
+  window.renderLoginDropdowns = () => {
+    const adminSel = document.getElementById('splashAdminSelect');
+    if (adminSel && AppState.admins) {
+      adminSel.innerHTML = '<option value="">— Select your profile —</option>' + 
+        AppState.admins.map(a => `<option value="${a.id}">${escapeHTML(a.name)}</option>`).join('');
+    }
+  };
+  window.renderLoginDropdowns();
 
   // Import Schedule Confirm
   document.getElementById('confirmImportBtn').addEventListener('click', async () => {
@@ -96,8 +98,5 @@ window.addEventListener('beforeunload', saveState);
 
 
 // --- Auto-generated globals for Vite migration ---
-window.updateTopbarDate = updateTopbarDate;
-window.navigateCalendar = navigateCalendar;
-window.initEventListeners = initEventListeners;
 window.populateTimeDropdowns = populateTimeDropdowns;
 window.init = init;

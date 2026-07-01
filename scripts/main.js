@@ -4,6 +4,7 @@ import "../styles/layout.css";
 import "../styles/components.css";
 
 import "../configuration/seed.js";
+import "./firebase.js";
 import "./api.js";
 import "../utilities/formatters.js";
 import "./state.js";
