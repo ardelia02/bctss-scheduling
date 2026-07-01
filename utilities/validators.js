@@ -7,7 +7,7 @@ const cachedTimeToMin = (t) => {
   if (!t) return 0;
   let val = _timeCache.get(t);
   if (val === undefined) {
-    val = cachedTimeToMin(t);
+    val = window.timeToMin(t);
     _timeCache.set(t, val);
   }
   return val;

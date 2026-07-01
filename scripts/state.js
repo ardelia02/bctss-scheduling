@@ -14,7 +14,7 @@ const loadState = () => {
       let jsonString = saved;
       // If it doesn't look like JSON (starts with {), assume it's base64 encoded
       if (!saved.startsWith('{')) {
-        jsonString = decodeBase64(saved);
+        jsonString = window.decodeBase64(saved);
       }
       const parsed = JSON.parse(jsonString);
       // Validate structural integrity of the parsed state
@@ -95,7 +95,7 @@ function saveState() {
       events:           AppState.events,
       unavailabilities: AppState.unavailabilities || []
     });
-    localStorage.setItem('bctss_schedule_state', encodeBase64(jsonState));
+    localStorage.setItem('bctss_schedule_state', window.encodeBase64(jsonState));
   } catch (err) {
     if (typeof showToast === 'function') {
       window.showToast('Failed to save data. Storage quota exceeded.', 'danger');

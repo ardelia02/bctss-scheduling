@@ -5,8 +5,8 @@ import "../styles/components.css";
 
 import "../configuration/seed.js";
 import "./api.js";
-import "./state.js";
 import "../utilities/formatters.js";
+import "./state.js";
 import "../utilities/lookups.js";
 import "./notifications.js";
 import "../components/calendar.js";
