@@ -65,7 +65,7 @@ const buildLessonTrainerDropdown = (selectedIds = []) => {
     return;
   }
 
-  dd.innerHTML = AppState.trainers.map(t => {
+  dd.innerHTML = AppState.trainers.filter(t => !t.hidden).map(t => {
     const isSel = selectedIds.includes(t.id);
     return `
       <label class="custom-option">

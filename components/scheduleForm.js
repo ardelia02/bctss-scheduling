@@ -115,7 +115,7 @@ const buildTrainerDropdown = (lessonId, preSelected = []) => {
   
   // Create checkboxes for authorised trainers
   const optionsHtml = AppState.trainers
-    .filter(t => authorised.includes(t.id)) // Only show authorised trainers
+    .filter(t => !t.hidden && authorised.includes(t.id)) // Only show authorised and non-hidden trainers
     .map(t => {
       let isOccupied = false;
       let badgeHtml = '';

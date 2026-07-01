@@ -5,7 +5,7 @@ const renderTrainers = () => {
   const grid = document.getElementById('trainersGrid');
   const avatarColors = ['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b'];
 
-  grid.innerHTML = AppState.trainers.map((t, i) => {
+  grid.innerHTML = AppState.trainers.filter(t => !t.hidden).map((t, i) => {
     const authorisedLessons = Object.entries(AppState.authMatrix)
       .filter(([, tids]) => tids.includes(t.id))
       .map(([lid]) => getLesson(lid).name)

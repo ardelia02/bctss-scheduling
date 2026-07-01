@@ -237,6 +237,7 @@ const initEventListeners = () => {
           document.getElementById('topicId').value = topic.id;
           document.getElementById('topicName').value = topic.name;
           document.getElementById('topicModalTitle').textContent = 'Edit Topic';
+          document.getElementById('deleteTopicBtn').style.display = 'inline-flex';
           window.openModal('topicModal');
         }
         return;
@@ -257,6 +258,7 @@ const initEventListeners = () => {
           topicSelect.value = lesson.topicId || AppState.topics[0].id;
           
           document.getElementById('lessonModalTitle').textContent = 'Edit Module';
+          document.getElementById('deleteLessonBtn').style.display = 'inline-flex';
           buildLessonPrerequisiteDropdown(lesson.id, lesson.prerequisiteIds || []);
           buildLessonTrainerDropdown(AppState.authMatrix[lesson.id] || []);
           window.openModal('lessonModal');
@@ -294,6 +296,7 @@ const initEventListeners = () => {
       document.getElementById('topicForm').reset();
       document.getElementById('topicId').value = '';
       document.getElementById('topicModalTitle').textContent = 'Add New Topic';
+      document.getElementById('deleteTopicBtn').style.display = 'none';
       window.openModal('topicModal');
     });
   }
@@ -322,6 +325,7 @@ const initEventListeners = () => {
       topicSelect.value = AppState.topics[0].id;
       
       document.getElementById('lessonModalTitle').textContent = 'Create New Module';
+      document.getElementById('deleteLessonBtn').style.display = 'none';
       buildLessonPrerequisiteDropdown(null, []);
       buildLessonTrainerDropdown([]);
       window.openModal('lessonModal');
@@ -392,6 +396,7 @@ const initEventListeners = () => {
     document.getElementById('trainerId').value = '';
     document.getElementById('trainerType').value = 'Full Time';
     document.getElementById('trainerModalTitle').textContent = 'Add New Trainer';
+    document.getElementById('deleteTrainerBtn').style.display = 'none';
     document.getElementById('trainerRecordsSection').style.display = 'none';
     buildTrainerCoursesDropdown([]);
     window.openModal('trainerModal');
@@ -415,6 +420,7 @@ window.editTrainer = (trainerId, monthHrs, todayHtml, uData) => {
   document.getElementById('trainerInitials').value = t.initials;
   document.getElementById('trainerType').value = t.type || 'Full Time';
   document.getElementById('trainerModalTitle').textContent = 'Trainer Details & Edit';
+  document.getElementById('deleteTrainerBtn').style.display = 'inline-flex';
   
   const statsDiv = document.getElementById('trainerModalStats');
   if (statsDiv) {
@@ -857,6 +863,60 @@ window.showTrainerLeaveRequests = (trainerId, uData) => {
       document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
     }
   });
+
+  // Deletion Logic
+  const deleteTopicBtn = document.getElementById('deleteTopicBtn');
+  if (deleteTopicBtn) {
+    deleteTopicBtn.addEventListener('click', () => {
+      const topicId = document.getElementById('topicId').value;
+      if (!topicId) return;
+      if (confirm('Are you sure you want to delete this topic and all its modules?')) {
+        AppState.topics = AppState.topics.filter(t => t.id !== topicId);
+        const moduleIdsToDelete = AppState.lessons.filter(l => l.topicId === topicId).map(l => l.id);
+        AppState.lessons = AppState.lessons.filter(l => l.topicId !== topicId);
+        AppState.events = AppState.events.filter(e => !moduleIdsToDelete.includes(e.lessonId));
+        
+        window.closeModal('topicModal');
+        window.saveState();
+        if (window.renderLessons) window.renderLessons();
+        window.showToast('Topic deleted successfully!', 'success');
+      }
+    });
+  }
+
+  const deleteLessonBtn = document.getElementById('deleteLessonBtn');
+  if (deleteLessonBtn) {
+    deleteLessonBtn.addEventListener('click', () => {
+      const lessonId = document.getElementById('lessonId').value;
+      if (!lessonId) return;
+      if (confirm('Are you sure you want to delete this module and cancel all its scheduled classes?')) {
+        AppState.lessons = AppState.lessons.filter(l => l.id !== lessonId);
+        AppState.events = AppState.events.filter(e => e.lessonId !== lessonId);
+        
+        window.closeModal('lessonModal');
+        window.saveState();
+        if (window.renderLessons) window.renderLessons();
+        window.showToast('Module deleted successfully!', 'success');
+      }
+    });
+  }
+
+  const deleteTrainerBtn = document.getElementById('deleteTrainerBtn');
+  if (deleteTrainerBtn) {
+    deleteTrainerBtn.addEventListener('click', () => {
+      const trainerId = document.getElementById('trainerId').value;
+      if (!trainerId) return;
+      if (confirm('Are you sure you want to delete this trainer? They will be hidden from the admin list.')) {
+        const trainer = AppState.trainers.find(t => t.id === trainerId);
+        if (trainer) trainer.hidden = true;
+        
+        window.closeModal('trainerModal');
+        window.saveState();
+        if (window.renderTrainers) window.renderTrainers();
+        window.showToast('Trainer deleted successfully!', 'success');
+      }
+    });
+  }
 };
 
 window.initEventListeners = initEventListeners;

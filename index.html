@@ -817,9 +817,12 @@
             <label for="topicName">Topic Name <span class="required">*</span></label>
             <input type="text" id="topicName" placeholder="e.g. Leadership" required />
           </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-ghost" id="cancelTopicBtn">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="saveTopicBtn">Save Topic</button>
+          <div class="modal-actions" style="justify-content: space-between; display: flex; width: 100%;">
+            <button type="button" class="btn btn-danger" id="deleteTopicBtn" style="display:none; background: var(--danger); color: white; border: none;">Delete</button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-ghost" id="cancelTopicBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveTopicBtn">Save Topic</button>
+            </div>
           </div>
         </form>
       </div>
@@ -945,9 +948,12 @@
               </div>
             </div>
           </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-ghost" id="cancelLessonBtn">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="saveLessonBtn">Save Module</button>
+          <div class="modal-actions" style="justify-content: space-between; display: flex; width: 100%;">
+            <button type="button" class="btn btn-danger" id="deleteLessonBtn" style="display:none; background: var(--danger); color: white; border: none;">Delete</button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-ghost" id="cancelLessonBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveLessonBtn">Save Module</button>
+            </div>
           </div>
         </form>
       </div>
@@ -1040,9 +1046,12 @@
             <div id="trainerRecordsList" style="max-height: 200px; overflow-y: auto; font-size: 13px; color: var(--gray-600); display:flex; flex-direction:column; gap:8px;">
             </div>
           </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-ghost" id="cancelTrainerBtn">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="saveTrainerBtn">Save Trainer</button>
+          <div class="modal-actions" style="justify-content: space-between; display: flex; width: 100%;">
+            <button type="button" class="btn btn-danger" id="deleteTrainerBtn" style="display:none; background: var(--danger); color: white; border: none;">Delete</button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-ghost" id="cancelTrainerBtn">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="saveTrainerBtn">Save Trainer</button>
+            </div>
           </div>
         </form>
       </div>
