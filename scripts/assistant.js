@@ -104,7 +104,7 @@ const runAssistant = () => {
       }
     });
     
-    const getHrs = (tId) => Math.round((trainerHours[tId] || 0) / 60 * 10) / 10;
+    const getHrs = (tId) => Number(((trainerHours[tId] || 0) / 60).toFixed(1));
     
     authTrainerAvail.sort((a, b) => {
       if (a.available === b.available) {
@@ -277,7 +277,7 @@ const updateFormAssistant = () => {
       }
     });
     
-    const getHrsPanel = (tId) => Math.round((trainerHoursPanel[tId] || 0) / 60 * 10) / 10;
+    const getHrsPanel = (tId) => Number(((trainerHoursPanel[tId] || 0) / 60).toFixed(1));
     
     const filteredTrainersPanel = avail.trainers.filter(t => authTrs.some(a => a.id === t.id));
     filteredTrainersPanel.sort((a, b) => {
@@ -318,4 +318,51 @@ const updateFormAssistant = () => {
     const durationMin = timeToMin(endTime) - timeToMin(startTime);
     const slotsToCheck = [];
     for (let m = 8*60; m + durationMin <= 18*60; m += 30) {
-      const s = `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padS
+      const s = `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+      const en = `${String(Math.floor((m+durationMin)/60)).padStart(2,'0')}:${String((m+durationMin)%60).padStart(2,'0')}`;
+      const a = getAvailability(date, s, en, AppState.editingEventId);
+      if (a.classrooms.some(c=>c.available) && a.trainers.some(t=>t.available && authTrs.some(a=>a.id===t.id))) {
+        slotsToCheck.push({ s, en });
+        if (slotsToCheck.length >= 3) break;
+      }
+    }
+
+    if (slotsToCheck.length > 0) {
+      html += `<div class="assist-group">
+        <h5>Earliest Available Slots</h5>
+        ${slotsToCheck.map(sl => `
+          <div class="suggest-slot" style="font-size:12px">
+            <div class="suggest-slot-time">${fmtTime(sl.s)} – ${fmtTime(sl.en)}</div>
+          </div>`).join('')}
+      </div>`;
+    }
+  } else if (!date) {
+    html += `<div class="assist-group">
+      <h5>📅 Next Step</h5>
+      <p style="font-size:12.5px;color:var(--gray-500)">Select a date to see real-time availability.</p>
+    </div>`;
+  }
+
+  body.innerHTML = html;
+  
+  // Render daily view inside scheduling assistant
+  const dateStr = document.getElementById('formDate').value;
+  const dayViewContainer = document.getElementById('scheduleDayViewContainer');
+  if (dayViewContainer) {
+    if (dateStr) {
+      dayViewContainer.style.display = 'block';
+      const filteredEvents = batchIds.length > 0 ? AppState.events.filter(e => batchIds.some(bid => (e.batchIds || []).includes(bid))) : AppState.events;
+      window.renderReusableWeekGrid('scheduleDayViewContainer', safeDate(dateStr), filteredEvents, null, 1);
+    } else {
+      dayViewContainer.style.display = 'none';
+      dayViewContainer.innerHTML = '';
+    }
+  }
+};
+
+
+
+// --- Auto-generated globals for Vite migration ---
+window.updateFormAssistant = updateFormAssistant;
+window.runAssistant = runAssistant;
+window.renderAssistant = renderAssistant;

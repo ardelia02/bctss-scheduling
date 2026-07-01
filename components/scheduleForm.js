@@ -208,7 +208,7 @@ const checkAvailability = () => {
     }
   });
   
-  const getHrs = (tId) => Math.round((trainerHours[tId] || 0) / 60 * 10) / 10;
+  const getHrs = (tId) => Number(((trainerHours[tId] || 0) / 60).toFixed(1));
 
   // Trainer list
   const lessonId     = FormDOM.get('formLesson').value;
